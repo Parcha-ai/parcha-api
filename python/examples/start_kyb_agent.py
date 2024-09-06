@@ -9,7 +9,7 @@ load_dotenv()
 
 
 # Use environment variables for sensitive information
-API_URL = os.getenv("PARCHA_BASE_URL", "https://us1.parcha.ai")
+API_URL = os.getenv("PARCHA_BASE_URL")
 API_TOKEN = os.getenv("PARCHA_API_KEY")
 AGENT_KEY = os.getenv("PARCHA_AGENT_KEY")
 
