@@ -53,7 +53,7 @@ Check out our [examples directory](/examples) for complete, production-ready cod
 
 ## 🚀 Getting Started
 
-1. Sign up for a [Parcha account](https://app.parcha.ai)
+1. [Book a demo](https://calendly.com/ajasver/request-a-demo) with our CEO and get sandbox access at [demo-ext.parcha.ai](https://demo-ext.parcha.ai)
 2. Get your API credentials from the dashboard
 3. Choose your preferred SDK
 4. Follow the SDK-specific installation instructions
