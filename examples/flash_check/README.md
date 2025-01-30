@@ -1,102 +1,43 @@
-# Parcha Flash Check
+# Flash Check Example
 
-A modern React application that demonstrates the capabilities of the Parcha API for flash card generation from PDF documents. This project serves as both a reference implementation and a practical tool for developers interested in integrating Parcha's AI-powered flash card generation capabilities into their applications.
+This example demonstrates how to perform a quick business verification using the Parcha API. A flash check is a lightweight verification that provides basic information about a business entity.
 
-## 🚀 Features
+## Prerequisites
 
-- PDF document upload and processing
-- Integration with Parcha API for flash card generation
-- Modern UI built with Mantine
-- Responsive design for various screen sizes
-- TypeScript support for type safety
-- PDF preview and handling
+- Python 3.8+
+- Parcha API credentials
+- `parcha-api` package installed
+- `structlog` for logging
 
-## 🛠️ Tech Stack
-
-- React 18.3 with TypeScript
-- Vite for blazing fast development
-- Mantine UI components
-- PDF.js for document handling
-- Axios for API communication
-
-## 📋 Prerequisites
-
-- Node.js (LTS version recommended)
-- npm or yarn
-- A Parcha API key
-
-## 🔧 Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/parcha-flash-check.git
-cd parcha-flash-check
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create a `.env` file in the root directory and add your Parcha API key:
-```env
-VITE_PARCHA_API_KEY=your_api_key_here
-```
-
-## 🚀 Development
-
-To start the development server:
+## Installation
 
 ```bash
-npm run dev
+pip install parcha-api structlog
 ```
 
-The application will be available at `http://localhost:5173`
+## Usage
 
-## 🏗️ Building for Production
+1. Set your API credentials in `config.py` or use environment variables:
 
-To create a production build:
+```python
+# config.py
+API_TOKEN = "your_api_token"
+AGENT_KEY = "your_agent_key"
+```
+
+2. Run the example:
 
 ```bash
-npm run build
+python flash_check.py "Acme Corp" "US"
 ```
 
-To preview the production build:
+## Code Explanation
 
-```bash
-npm run preview
-```
+The example demonstrates:
+- Proper error handling
+- Structured logging
+- Webhook configuration
+- Async operation support
+- Result processing
 
-## 🧪 Linting
-
-To run the linter:
-
-```bash
-npm run lint
-```
-
-## 📁 Project Structure
-
-```
-src/
-├── components/     # Reusable UI components
-├── services/      # API and service integrations
-├── utils/         # Helper functions and utilities
-├── context/       # React context providers
-├── types/         # TypeScript type definitions
-└── assets/        # Static assets
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Built with [Parcha API](https://parcha.ai)
-- UI components from [Mantine](https://mantine.dev)
-- PDF handling with [React PDF Viewer](https://react-pdf-viewer.dev)
+Check `flash_check.py` for the implementation details.
