@@ -55,7 +55,7 @@ class KYCAgentJobInput(BaseModel):
     slack_webhook_url: Optional[str] = None
     run_config: Optional[RunConfig] = None
     check_ids: Optional[List[str]] = None
-    run_in_parallel: Optional[bool] = False
+    run_in_parallel: Optional[bool] = True
 
 
 class CheckJobInput(BaseModel):
