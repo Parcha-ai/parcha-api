@@ -31,7 +31,8 @@ Create a `.env` file in the project root with the following variables:
 VITE_API_KEY=your_api_key_here
 
 # Required: Your agent key for document validation
-VITE_AGENT_KEY=mercury-poa-v1
+# Please ask the Parcha team for your unique agent key.
+VITE_AGENT_KEY=parcha-poa-v1
 
 # Optional: API URL - defaults to https://demo.parcha.ai/api/v1
 VITE_API_URL=http://localhost:8001/api/v1
