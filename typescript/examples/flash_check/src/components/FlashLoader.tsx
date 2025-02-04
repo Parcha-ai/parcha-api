@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
@@ -22,8 +22,8 @@ const API_URL = `${
 }/runFlashCheck`;
 const WORKER_URL =
   "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
-const API_KEY_STORAGE_KEY = "parcha_flash_loader_api_key";
 const AGENT_KEY = import.meta.env.VITE_AGENT_KEY;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return null;
@@ -37,9 +37,6 @@ const formatDate = (dateString: string | null) => {
 };
 
 export const FlashLoader: React.FC = () => {
-  const [apiKey, setApiKey] = useState(() => {
-    return localStorage.getItem(API_KEY_STORAGE_KEY) || "";
-  });
   const [document, setDocument] = useState<DocumentFile | null>(null);
   const [response, setResponse] = useState<FlashLoaderResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,41 +51,19 @@ export const FlashLoader: React.FC = () => {
     VALIDITY_PERIODS[0]
   );
 
-  useEffect(() => {
-    localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
-  }, [apiKey]);
-
-  useEffect(() => {
-    if (!AGENT_KEY) {
-      setError("VITE_AGENT_KEY environment variable is not set");
-    }
-  }, []);
-
-  const defaultLayoutPluginInstance = defaultLayoutPlugin();
-
-  const toggleDocumentType = (value: DocumentTypeValue) => {
-    const newTypes = new Set(acceptedTypes);
-    if (newTypes.has(value)) {
-      if (newTypes.size > 1) {
-        newTypes.delete(value);
-        setAcceptedTypes(newTypes);
-      }
-    } else {
-      newTypes.add(value);
-      setAcceptedTypes(newTypes);
-    }
+  const getMissingEnvVars = () => {
+    const missing = [];
+    if (!API_KEY) missing.push("VITE_API_KEY");
+    if (!AGENT_KEY) missing.push("VITE_AGENT_KEY");
+    return missing;
   };
 
-  const checkDocumentWithApi = async (doc: DocumentFile) => {
-    if (!apiKey) {
-      setError("Please provide an API key");
-      return;
-    }
+  const missingEnvVars = getMissingEnvVars();
+  const isConfigured = missingEnvVars.length === 0;
+  const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
-    if (!AGENT_KEY) {
-      setError("VITE_AGENT_KEY environment variable is not set");
-      return;
-    }
+  const checkDocumentWithApi = async (doc: DocumentFile) => {
+    if (!isConfigured) return;
 
     if (acceptedTypes.size === 0) {
       setError("Please select at least one document type");
@@ -101,14 +76,14 @@ export const FlashLoader: React.FC = () => {
 
     try {
       const result = await checkDocument(
-        { apiKey, baseUrl: API_URL, agentKey: AGENT_KEY },
+        { apiKey: API_KEY, baseUrl: API_URL, agentKey: AGENT_KEY },
         doc.base64,
         doc.file.name,
         Array.from(acceptedTypes),
         validityPeriod.days
       );
       const endTime = Date.now();
-      setTimeSpent((endTime - startTime) / 1000); // Convert to seconds
+      setTimeSpent((endTime - startTime) / 1000);
       log.info("flash_loader_response", {
         time_spent: (endTime - startTime) / 1000,
         full_response: result,
@@ -143,7 +118,7 @@ export const FlashLoader: React.FC = () => {
         log.error("file_processing_error", err as Error);
       }
     },
-    [apiKey, acceptedTypes, validityPeriod]
+    [acceptedTypes, validityPeriod]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -152,7 +127,7 @@ export const FlashLoader: React.FC = () => {
       "application/pdf": [".pdf"],
     },
     maxFiles: 1,
-    disabled: !apiKey || loading,
+    disabled: !isConfigured || loading,
   });
 
   const getPdfUrl = (response: FlashLoaderResponse) => {
@@ -169,12 +144,12 @@ export const FlashLoader: React.FC = () => {
   const pdfUrl = response ? getPdfUrl(response) : null;
 
   const getCurlCommand = () => {
-    if (!document || !apiKey) return "";
+    if (!document) return "";
 
     const documentTypes = Array.from(acceptedTypes).join(",");
     const command = [
       `curl -X POST '${API_URL}' \\`,
-      `-H 'Authorization: Bearer ......' \\`,
+      `-H 'Authorization: Bearer ${API_KEY}' \\`,
       `-H 'Content-Type: application/json' \\`,
       `-d '{`,
       `  "agent_key": "${AGENT_KEY}",`,
@@ -202,40 +177,34 @@ export const FlashLoader: React.FC = () => {
     return command;
   };
 
+  const toggleDocumentType = (value: DocumentTypeValue) => {
+    const newTypes = new Set(acceptedTypes);
+    if (newTypes.has(value)) {
+      if (newTypes.size > 1) {
+        newTypes.delete(value);
+        setAcceptedTypes(newTypes);
+      }
+    } else {
+      newTypes.add(value);
+      setAcceptedTypes(newTypes);
+    }
+  };
+
   return (
     <div className="flash-loader">
-      <div className="config-section">
-        <input
-          type="password"
-          placeholder="Enter your API Key"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          className="api-input"
-        />
-        {document && (
-          <button
-            onClick={() => setShowCodeModal(true)}
-            className="view-code-button"
-          >
-            View Code
-          </button>
-        )}
+      <div className="header">
+        <h1>Document Validation Playground</h1>
+        <p className="subtitle">
+          Test our document validation API by uploading business documents.
+          We'll analyze them for validity, extract key information, and provide
+          detailed feedback.
+        </p>
       </div>
 
-      {showCodeModal && (
-        <div className="modal-overlay" onClick={() => setShowCodeModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>API Request Code</h3>
-              <button
-                className="modal-close"
-                onClick={() => setShowCodeModal(false)}
-              >
-                ×
-              </button>
-            </div>
-            <pre className="code-block">{getCurlCommand()}</pre>
-          </div>
+      {!isConfigured && (
+        <div className="env-error-banner">
+          <p>⚠️ Missing environment variables: {missingEnvVars.join(", ")}</p>
+          <p>Please check your .env file.</p>
         </div>
       )}
 
@@ -244,7 +213,7 @@ export const FlashLoader: React.FC = () => {
           className="accordion-toggle"
           onClick={() => setShowDocumentTypes(!showDocumentTypes)}
         >
-          <span>Advanced Options</span>
+          <span>Validation Options</span>
           <span className="accordion-icon">
             {showDocumentTypes ? "▼" : "▶"}
           </span>
@@ -252,6 +221,9 @@ export const FlashLoader: React.FC = () => {
         {showDocumentTypes && (
           <div className="document-types">
             <h3>Accepted Document Types</h3>
+            <p className="helper-text">
+              Select which types of documents you want to validate:
+            </p>
             <div className="document-types-grid">
               {DOCUMENT_TYPES.map((type) => (
                 <label key={type.value} className="document-type-checkbox">
@@ -270,7 +242,10 @@ export const FlashLoader: React.FC = () => {
               ))}
             </div>
 
-            <h3 className="validity-title">Validity Period</h3>
+            <h3 className="validity-title">Document Age Limit</h3>
+            <p className="helper-text">
+              Set how recent the document needs to be:
+            </p>
             <div className="validity-options">
               {VALIDITY_PERIODS.map((period) => (
                 <label key={period.days} className="validity-option">
@@ -289,57 +264,92 @@ export const FlashLoader: React.FC = () => {
         )}
       </div>
 
-      <div
-        {...getRootProps()}
-        className={`dropzone ${isDragActive ? "active" : ""} ${
-          document ? "has-file" : ""
-        } ${!apiKey || loading ? "disabled" : ""}`}
-      >
-        <input {...getInputProps()} />
-        {document ? (
-          <div className="file-info">
-            <p>📄 {document.file.name}</p>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setDocument(null);
-                setResponse(null);
-              }}
-              disabled={loading}
-            >
-              Remove
-            </button>
-          </div>
-        ) : (
-          <p>
-            {!apiKey
-              ? "Enter API key to upload"
-              : loading
-              ? "Processing..."
-              : isDragActive
-              ? "Drop the PDF here"
-              : "Drag & drop a PDF here, or click to select"}
-          </p>
+      <div className="upload-section">
+        <div
+          {...getRootProps()}
+          className={`dropzone ${isDragActive ? "active" : ""} ${
+            document ? "has-file" : ""
+          } ${!isConfigured || loading ? "disabled" : ""}`}
+        >
+          <input {...getInputProps()} />
+          {document ? (
+            <div className="file-info">
+              <p>📄 {document.file.name}</p>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDocument(null);
+                  setResponse(null);
+                }}
+                disabled={loading}
+              >
+                Remove
+              </button>
+            </div>
+          ) : (
+            <div className="dropzone-content">
+              <p className="dropzone-title">
+                {!isConfigured
+                  ? "Configure environment variables to start"
+                  : loading
+                  ? "Processing..."
+                  : isDragActive
+                  ? "Drop your document here"
+                  : "Upload a document for validation"}
+              </p>
+              {isConfigured && !loading && !isDragActive && (
+                <p className="dropzone-subtitle">
+                  Drag & drop a PDF file here, or click to browse
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {document && (
+          <button
+            onClick={() => setShowCodeModal(true)}
+            className="view-code-button"
+          >
+            View API Request
+          </button>
         )}
       </div>
 
       {error && <div className="error-message">{error}</div>}
 
-      {loading && <div className="loading-text">Analyzing document...</div>}
+      {loading && (
+        <div className="loading-text">
+          Analyzing your document... This usually takes 5-10 seconds.
+        </div>
+      )}
 
       {response && (
         <div className="results-container">
           <div className={`result ${response.passed ? "success" : "failure"}`}>
-            <h3>Result:</h3>
-            <p>Status: {response.passed ? "Passed ✅" : "Failed ❌"}</p>
-            <p>
-              Time Spent:{" "}
-              {timeSpent ? `${timeSpent.toFixed(2)}s` : "Not available"}
-            </p>
+            <h3>Validation Results</h3>
+
+            <div className="result-status">
+              <p>
+                <strong>Status:</strong>{" "}
+                <span
+                  className={response.passed ? "success-text" : "failure-text"}
+                >
+                  {response.passed ? "Passed ✅" : "Failed ❌"}
+                </span>
+              </p>
+              <p>
+                <strong>Processing Time:</strong>{" "}
+                {timeSpent
+                  ? `${timeSpent.toFixed(2)} seconds`
+                  : "Not available"}
+              </p>
+            </div>
+
             {response.alerts && Object.keys(response.alerts).length > 0 && (
               <div className="alerts">
                 <p>
-                  <strong>⚠️ Warnings:</strong>
+                  <strong>⚠️ Validation Warnings</strong>
                 </p>
                 <ul>
                   {Object.entries(response.alerts).map(([key, message]) => (
@@ -348,21 +358,27 @@ export const FlashLoader: React.FC = () => {
                 </ul>
               </div>
             )}
-            <p>Analysis: {response.answer}</p>
+
+            <div className="analysis-section">
+              <p>
+                <strong>Analysis:</strong>
+              </p>
+              <p>{response.answer}</p>
+            </div>
 
             <div className="document-details">
               <h4>Document Information</h4>
               <div className="document-item">
                 <p>
-                  <strong>Company:</strong>{" "}
+                  <strong>Company</strong>
                   {response.payload.company_name || "Not available"}
                 </p>
                 <p>
-                  <strong>Document Type:</strong>{" "}
+                  <strong>Document Type</strong>
                   {response.payload.document_type || "Not available"}
                 </p>
                 <p>
-                  <strong>Document Date:</strong>{" "}
+                  <strong>Document Date</strong>
                   {formatDate(response.payload.document_date) ||
                     "Not available"}
                 </p>
@@ -370,7 +386,7 @@ export const FlashLoader: React.FC = () => {
                 {response.payload.document_address && (
                   <div className="address-details">
                     <p>
-                      <strong>Address:</strong>
+                      <strong>Address</strong>
                     </p>
                     {response.payload.document_address.street_1 && (
                       <p>{response.payload.document_address.street_1}</p>
@@ -402,12 +418,14 @@ export const FlashLoader: React.FC = () => {
                 <div className="document-item">
                   {response.follow_up && (
                     <p>
-                      <strong>Follow-up:</strong> {response.follow_up}
+                      <strong>Follow-up</strong>
+                      {response.follow_up}
                     </p>
                   )}
                   {response.recommendation && (
                     <p>
-                      <strong>Recommendation:</strong> {response.recommendation}
+                      <strong>Recommendation</strong>
+                      {response.recommendation}
                     </p>
                   )}
                 </div>
@@ -426,6 +444,23 @@ export const FlashLoader: React.FC = () => {
             ) : (
               <div className="pdf-loading">Loading PDF...</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showCodeModal && (
+        <div className="modal-overlay" onClick={() => setShowCodeModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>API Request Code</h3>
+              <button
+                className="modal-close"
+                onClick={() => setShowCodeModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <pre className="code-block">{getCurlCommand()}</pre>
           </div>
         </div>
       )}

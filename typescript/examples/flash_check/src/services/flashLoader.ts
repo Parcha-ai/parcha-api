@@ -1,5 +1,4 @@
 import { FlashLoaderResponse, DocumentTypeValue } from "../types/flash";
-import { log } from "../utils/logger";
 
 export interface Config {
   apiKey: string;
@@ -21,7 +20,7 @@ export const checkDocument = async (
       Authorization: `Bearer ${config.apiKey}`,
     },
     body: JSON.stringify({
-      agent_key: "mercury-poa-v1",
+      agent_key: config.agentKey,
       check_id: "kyb.proof_of_address_verification",
       check_args: {
         validity_period: validityPeriod,

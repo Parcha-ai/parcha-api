@@ -73,7 +73,7 @@ yarn preview
 Create a `.env` file in the root directory with the following variables:
 
 ```env
-# Your Parcha API key
+# Your Parcha API key (required)
 VITE_API_KEY=your_api_key_here
 
 # Agent key for document verification (required)
