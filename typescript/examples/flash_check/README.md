@@ -1,4 +1,4 @@
-# Parcha Flash Check
+# Document Validation Playground
 
 A modern React application built with Vite and TypeScript for performing quick business verifications using the Parcha API. The app features a clean UI built with Mantine components and includes PDF viewing capabilities.
 
@@ -6,6 +6,7 @@ A modern React application built with Vite and TypeScript for performing quick b
 
 - Node.js (v18 or higher)
 - npm or yarn package manager
+- Parcha API credentials (API key and agent key)
 
 ## 📦 Installation
 
@@ -21,6 +22,22 @@ npm install
 # or if you use yarn
 yarn install
 ```
+
+3. Configure environment variables:
+
+Create a `.env` file in the project root with the following variables:
+```env
+# Required: Your Parcha API key from the dashboard
+VITE_API_KEY=your_api_key_here
+
+# Required: Your agent key for document validation
+VITE_AGENT_KEY=mercury-poa-v1
+
+# Optional: API URL - defaults to https://demo.parcha.ai/api/v1
+VITE_API_URL=http://localhost:8001/api/v1
+```
+
+> 💡 **Note:** You can get your API credentials from the [Parcha Dashboard](https://demo.parcha.ai). If you don't have access yet, [contact our team](mailto:support@parcha.ai).
 
 ## 🛠️ Development
 
@@ -67,21 +84,6 @@ yarn preview
 - `npm run build` - Create production build
 - `npm run lint` - Run ESLint
 - `npm run preview` - Preview production build
-
-## 🔧 Environment Variables
-
-Create a `.env` file in the root directory with the following variables:
-
-```env
-# Your Parcha API key (required)
-VITE_API_KEY=your_api_key_here
-
-# Agent key for document verification (required)
-VITE_AGENT_KEY=mercury-poa-v1
-
-# API URL (optional) - defaults to https://demo.parcha.ai/api/v1
-VITE_API_URL=http://localhost:8001/api/v1
-```
 
 ## 📚 Features
 
