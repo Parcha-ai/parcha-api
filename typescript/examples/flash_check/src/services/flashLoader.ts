@@ -1,9 +1,10 @@
 import { FlashLoaderResponse, DocumentTypeValue } from "../types/flash";
 import { log } from "../utils/logger";
 
-interface Config {
-  baseUrl: string;
+export interface Config {
   apiKey: string;
+  baseUrl: string;
+  agentKey: string;
 }
 
 export const checkDocument = async (

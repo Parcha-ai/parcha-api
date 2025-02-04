@@ -17,10 +17,13 @@ import { checkDocument } from "../services/flashLoader";
 import { log } from "../utils/logger";
 import "./FlashLoader.css";
 
-const API_URL = "http://localhost:8001/api/v1/runFlashCheck";
+const API_URL = `${
+  import.meta.env.VITE_API_URL || "https://demo.parcha.ai/api/v1"
+}/runFlashCheck`;
 const WORKER_URL =
   "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
 const API_KEY_STORAGE_KEY = "parcha_flash_loader_api_key";
+const AGENT_KEY = import.meta.env.VITE_AGENT_KEY;
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return null;
@@ -55,6 +58,12 @@ export const FlashLoader: React.FC = () => {
     localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
   }, [apiKey]);
 
+  useEffect(() => {
+    if (!AGENT_KEY) {
+      setError("VITE_AGENT_KEY environment variable is not set");
+    }
+  }, []);
+
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
   const toggleDocumentType = (value: DocumentTypeValue) => {
@@ -76,6 +85,11 @@ export const FlashLoader: React.FC = () => {
       return;
     }
 
+    if (!AGENT_KEY) {
+      setError("VITE_AGENT_KEY environment variable is not set");
+      return;
+    }
+
     if (acceptedTypes.size === 0) {
       setError("Please select at least one document type");
       return;
@@ -87,7 +101,7 @@ export const FlashLoader: React.FC = () => {
 
     try {
       const result = await checkDocument(
-        { apiKey, baseUrl: API_URL },
+        { apiKey, baseUrl: API_URL, agentKey: AGENT_KEY },
         doc.base64,
         doc.file.name,
         Array.from(acceptedTypes),
@@ -163,7 +177,7 @@ export const FlashLoader: React.FC = () => {
       `-H 'Authorization: Bearer ......' \\`,
       `-H 'Content-Type: application/json' \\`,
       `-d '{`,
-      `  "agent_key": "mercury-poa-v1",`,
+      `  "agent_key": "${AGENT_KEY}",`,
       `  "check_id": "kyb.proof_of_address_verification",`,
       `  "check_args": {`,
       `    "validity_period": ${validityPeriod.days},`,
