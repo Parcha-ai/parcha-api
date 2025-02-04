@@ -203,237 +203,227 @@ export const FlashLoader: React.FC = () => {
 
       {!isConfigured && (
         <div className="env-error-banner">
-          <p>⚠️ Missing environment variables: {missingEnvVars.join(", ")}</p>
-          <p>Please check your .env file.</p>
+          <span>⚠️</span>
+          <p>Missing environment variables: {missingEnvVars.join(", ")}</p>
         </div>
       )}
 
-      <div className="document-types-accordion">
-        <button
-          className="accordion-toggle"
-          onClick={() => setShowDocumentTypes(!showDocumentTypes)}
-        >
-          <span>Validation Options</span>
-          <span className="accordion-icon">
-            {showDocumentTypes ? "▼" : "▶"}
-          </span>
-        </button>
-        {showDocumentTypes && (
-          <div className="document-types">
-            <h3>Accepted Document Types</h3>
-            <p className="helper-text">
-              Select which types of documents you want to validate:
-            </p>
-            <div className="document-types-grid">
-              {DOCUMENT_TYPES.map((type) => (
-                <label key={type.value} className="document-type-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={acceptedTypes.has(type.value)}
-                    onChange={() => toggleDocumentType(type.value)}
-                    disabled={
-                      loading ||
-                      (acceptedTypes.size === 1 &&
-                        acceptedTypes.has(type.value))
-                    }
-                  />
-                  <span>{type.label}</span>
-                </label>
-              ))}
-            </div>
-
-            <h3 className="validity-title">Document Age Limit</h3>
-            <p className="helper-text">
-              Set how recent the document needs to be:
-            </p>
-            <div className="validity-options">
-              {VALIDITY_PERIODS.map((period) => (
-                <label key={period.days} className="validity-option">
-                  <input
-                    type="radio"
-                    name="validity"
-                    checked={validityPeriod.days === period.days}
-                    onChange={() => setValidityPeriod(period)}
-                    disabled={loading}
-                  />
-                  <span>{period.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="upload-section">
-        <div
-          {...getRootProps()}
-          className={`dropzone ${isDragActive ? "active" : ""} ${
-            document ? "has-file" : ""
-          } ${!isConfigured || loading ? "disabled" : ""}`}
-        >
-          <input {...getInputProps()} />
-          {document ? (
-            <div className="file-info">
-              <p>📄 {document.file.name}</p>
+      <div className="main-content">
+        <div className="controls-section">
+          <div className="controls-panel">
+            <div className="document-types-accordion">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDocument(null);
-                  setResponse(null);
-                }}
-                disabled={loading}
+                className="accordion-toggle"
+                onClick={() => setShowDocumentTypes(!showDocumentTypes)}
               >
-                Remove
+                <span>Validation Options</span>
+                <span className="accordion-icon">
+                  {showDocumentTypes ? "▼" : "▶"}
+                </span>
               </button>
-            </div>
-          ) : (
-            <div className="dropzone-content">
-              <p className="dropzone-title">
-                {!isConfigured
-                  ? "Configure environment variables to start"
-                  : loading
-                  ? "Processing..."
-                  : isDragActive
-                  ? "Drop your document here"
-                  : "Upload a document for validation"}
-              </p>
-              {isConfigured && !loading && !isDragActive && (
-                <p className="dropzone-subtitle">
-                  Drag & drop a PDF file here, or click to browse
-                </p>
+              {showDocumentTypes && (
+                <div className="document-types">
+                  <h3>Document Types</h3>
+                  <div className="document-types-grid">
+                    {DOCUMENT_TYPES.map((type) => (
+                      <label
+                        key={type.value}
+                        className="document-type-checkbox"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={acceptedTypes.has(type.value)}
+                          onChange={() => toggleDocumentType(type.value)}
+                          disabled={
+                            loading ||
+                            (acceptedTypes.size === 1 &&
+                              acceptedTypes.has(type.value))
+                          }
+                        />
+                        <span>{type.label}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  <h3>Age Limit</h3>
+                  <div className="validity-options">
+                    {VALIDITY_PERIODS.map((period) => (
+                      <label key={period.days} className="validity-option">
+                        <input
+                          type="radio"
+                          name="validity"
+                          checked={validityPeriod.days === period.days}
+                          onChange={() => setValidityPeriod(period)}
+                          disabled={loading}
+                        />
+                        <span>{period.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
-          )}
-        </div>
 
-        {document && (
-          <button
-            onClick={() => setShowCodeModal(true)}
-            className="view-code-button"
-          >
-            View API Request
-          </button>
-        )}
-      </div>
-
-      {error && <div className="error-message">{error}</div>}
-
-      {loading && (
-        <div className="loading-text">
-          Analyzing your document... This usually takes 5-10 seconds.
-        </div>
-      )}
-
-      {response && (
-        <div className="results-container">
-          <div className={`result ${response.passed ? "success" : "failure"}`}>
-            <h3>Validation Results</h3>
-
-            <div className="result-status">
-              <p>
-                <strong>Status:</strong>{" "}
-                <span
-                  className={response.passed ? "success-text" : "failure-text"}
-                >
-                  {response.passed ? "Passed ✅" : "Failed ❌"}
-                </span>
-              </p>
-              <p>
-                <strong>Processing Time:</strong>{" "}
-                {timeSpent
-                  ? `${timeSpent.toFixed(2)} seconds`
-                  : "Not available"}
-              </p>
-            </div>
-
-            {response.alerts && Object.keys(response.alerts).length > 0 && (
-              <div className="alerts">
-                <p>
-                  <strong>⚠️ Validation Warnings</strong>
-                </p>
-                <ul>
-                  {Object.entries(response.alerts).map(([key, message]) => (
-                    <li key={key}>{message as string}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="analysis-section">
-              <p>
-                <strong>Analysis:</strong>
-              </p>
-              <p>{response.answer}</p>
-            </div>
-
-            <div className="document-details">
-              <h4>Document Information</h4>
-              <div className="document-item">
-                <p>
-                  <strong>Company</strong>
-                  {response.payload.company_name || "Not available"}
-                </p>
-                <p>
-                  <strong>Document Type</strong>
-                  {response.payload.document_type || "Not available"}
-                </p>
-                <p>
-                  <strong>Document Date</strong>
-                  {formatDate(response.payload.document_date) ||
-                    "Not available"}
-                </p>
-
-                {response.payload.document_address && (
-                  <div className="address-details">
-                    <p>
-                      <strong>Address</strong>
-                    </p>
-                    {response.payload.document_address.street_1 && (
-                      <p>{response.payload.document_address.street_1}</p>
-                    )}
-                    {response.payload.document_address.street_2 && (
-                      <p>{response.payload.document_address.street_2}</p>
-                    )}
-                    {(response.payload.document_address.city ||
-                      response.payload.document_address.state ||
-                      response.payload.document_address.postal_code) && (
-                      <p>
-                        {[
-                          response.payload.document_address.city,
-                          response.payload.document_address.state,
-                          response.payload.document_address.postal_code,
-                        ]
-                          .filter(Boolean)
-                          .join(", ")}
-                      </p>
-                    )}
-                    {response.payload.document_address.country_code && (
-                      <p>{response.payload.document_address.country_code}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {(response.follow_up || response.recommendation) && (
-                <div className="document-item">
-                  {response.follow_up && (
-                    <p>
-                      <strong>Follow-up</strong>
-                      {response.follow_up}
-                    </p>
-                  )}
-                  {response.recommendation && (
-                    <p>
-                      <strong>Recommendation</strong>
-                      {response.recommendation}
+            <div
+              {...getRootProps()}
+              className={`dropzone ${isDragActive ? "active" : ""} ${
+                document ? "has-file" : ""
+              } ${!isConfigured || loading ? "disabled" : ""}`}
+            >
+              <input {...getInputProps()} />
+              {document ? (
+                <div className="file-info">
+                  <p>📄 {document.file.name}</p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDocument(null);
+                      setResponse(null);
+                    }}
+                    disabled={loading}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="dropzone-content">
+                  <p className="dropzone-title">
+                    {!isConfigured
+                      ? "Configure environment variables to start"
+                      : loading
+                      ? "Processing..."
+                      : isDragActive
+                      ? "Drop your document here"
+                      : "Upload a document"}
+                  </p>
+                  {isConfigured && !loading && !isDragActive && (
+                    <p className="dropzone-subtitle">
+                      Drag & drop a PDF file here, or click to browse
                     </p>
                   )}
                 </div>
               )}
             </div>
+
+            {document && (
+              <button
+                onClick={() => setShowCodeModal(true)}
+                className="view-code-button"
+              >
+                View API Request
+              </button>
+            )}
           </div>
 
-          <div className="pdf-viewer">
+          {response && (
+            <div className="results-container">
+              <div
+                className={`result ${response.passed ? "success" : "failure"}`}
+              >
+                <div className="result-status">
+                  <p>
+                    <strong>Status:</strong>
+                    <span
+                      className={
+                        response.passed ? "success-text" : "failure-text"
+                      }
+                    >
+                      {response.passed ? "Passed ✅" : "Failed ❌"}
+                    </span>
+                  </p>
+                  <p>
+                    <strong>Processing Time:</strong>
+                    {timeSpent
+                      ? `${timeSpent.toFixed(2)} seconds`
+                      : "Not available"}
+                  </p>
+                </div>
+
+                {response.alerts && Object.keys(response.alerts).length > 0 && (
+                  <div className="alerts">
+                    <p>
+                      <strong>⚠️ Validation Warnings</strong>
+                    </p>
+                    <ul>
+                      {Object.entries(response.alerts).map(([key, message]) => (
+                        <li key={key}>{message as string}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="analysis-section">
+                  <p>
+                    <strong>Analysis</strong>
+                  </p>
+                  <p>{response.answer}</p>
+                </div>
+
+                <div className="document-details">
+                  <h4>Document Information</h4>
+                  <div className="document-item">
+                    <p>
+                      <strong>Company</strong>
+                      {response.payload.company_name || "Not available"}
+                    </p>
+                    <p>
+                      <strong>Document Type</strong>
+                      {response.payload.document_type || "Not available"}
+                    </p>
+                    <p>
+                      <strong>Document Date</strong>
+                      {formatDate(response.payload.document_date) ||
+                        "Not available"}
+                    </p>
+
+                    {response.payload.document_address && (
+                      <div className="address-details">
+                        <p>
+                          <strong>Address</strong>
+                        </p>
+                        {response.payload.document_address.street_1 && (
+                          <p>{response.payload.document_address.street_1}</p>
+                        )}
+                        {response.payload.document_address.street_2 && (
+                          <p>{response.payload.document_address.street_2}</p>
+                        )}
+                        {(response.payload.document_address.city ||
+                          response.payload.document_address.state ||
+                          response.payload.document_address.postal_code) && (
+                          <p>
+                            {[
+                              response.payload.document_address.city,
+                              response.payload.document_address.state,
+                              response.payload.document_address.postal_code,
+                            ]
+                              .filter(Boolean)
+                              .join(", ")}
+                          </p>
+                        )}
+                        {response.payload.document_address.country_code && (
+                          <p>
+                            {response.payload.document_address.country_code}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="preview-section">
+          {error && <div className="error-message">{error}</div>}
+
+          {loading && (
+            <div className="loading-text">
+              Analyzing your document... This usually takes 5-10 seconds.
+            </div>
+          )}
+
+          <div className="pdf-container">
             {pdfUrl ? (
               <Worker workerUrl={WORKER_URL}>
                 <Viewer
@@ -446,13 +436,13 @@ export const FlashLoader: React.FC = () => {
             )}
           </div>
         </div>
-      )}
+      </div>
 
       {showCodeModal && (
         <div className="modal-overlay" onClick={() => setShowCodeModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>API Request Code</h3>
+              <h3>API Request</h3>
               <button
                 className="modal-close"
                 onClick={() => setShowCodeModal(false)}
