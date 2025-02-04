@@ -63,10 +63,15 @@ class ParchaAPI:
             aiohttp.ClientResponseError: If the request fails.
         """
         url = f"{self.base_url}{endpoint}"
-        async with aiohttp.ClientSession() as session:
-            async with session.request(method, url, headers=self.headers, json=data, params=params) as response:
-                response.raise_for_status()
-                return await response.json()
+        headers = self.headers
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.request(method, url, headers=headers, json=data, params=params) as response:
+                    response.raise_for_status()
+                    return await response.json()
+        except aiohttp.ClientResponseError as e:
+            # logger.error("request_failed", url=url, method=method, status=e.status, message=e.message, exc_info=e)
+            raise
 
     def start_kyb_agent_job(self, agent_input: KYBAgentJobInput):
         """
