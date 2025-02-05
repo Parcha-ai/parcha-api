@@ -1,0 +1,10 @@
+{
+  "name": "parcha-api",
+  "private": true,
+  "workspaces": [
+    "typescript/examples/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces"
+  }
+} 
