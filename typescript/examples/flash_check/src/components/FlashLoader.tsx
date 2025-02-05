@@ -149,7 +149,7 @@ export const FlashLoader: React.FC = () => {
     const documentTypes = Array.from(acceptedTypes).join(",");
     const command = [
       `curl -X POST '${API_URL}' \\`,
-      `-H 'Authorization: Bearer ${API_KEY}' \\`,
+      `-H 'Authorization: Bearer *****' \\`,
       `-H 'Content-Type: application/json' \\`,
       `-d '{`,
       `  "agent_key": "${AGENT_KEY}",`,
