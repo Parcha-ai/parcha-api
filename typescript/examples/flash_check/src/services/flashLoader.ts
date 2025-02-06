@@ -11,7 +11,8 @@ export const checkDocument = async (
   document: string,
   filename: string,
   documentTypes: DocumentTypeValue[],
-  validityPeriod: number = 90
+  validityPeriod: number = 90,
+  descope_user_id?: string
 ): Promise<FlashLoaderResponse> => {
   const response = await fetch(`${config.baseUrl}`, {
     method: "POST",
@@ -40,6 +41,7 @@ export const checkDocument = async (
           ],
         },
       },
+      ...(descope_user_id ? { descope_user_id } : {}),
     }),
   });
 

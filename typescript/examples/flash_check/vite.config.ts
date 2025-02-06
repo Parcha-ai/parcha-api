@@ -20,4 +20,34 @@ export default defineConfig({
       "Referrer-Policy": "no-referrer",
     },
   },
+  build: {
+    lib: {
+      entry: "./src/index.ts",
+      name: "FlashLoader",
+      fileName: "flash-loader",
+      formats: ["es", "umd"],
+    },
+    rollupOptions: {
+      external: ["react", "react-dom"],
+      output: {
+        globals: {
+          react: "React",
+          "react-dom": "ReactDOM",
+        },
+        assetFileNames: (assetInfo) => {
+          return assetInfo.name === "style.css"
+            ? "flash-loader.css"
+            : assetInfo.name || "";
+        },
+      },
+    },
+    cssCodeSplit: false,
+    cssMinify: true,
+  },
+  css: {
+    modules: {
+      localsConvention: "camelCase",
+      generateScopedName: "[name]__[local]___[hash:base64:5]",
+    },
+  },
 });

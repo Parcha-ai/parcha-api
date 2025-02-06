@@ -36,7 +36,13 @@ const formatDate = (dateString: string | null) => {
   });
 };
 
-export const FlashLoader: React.FC = () => {
+interface FlashLoaderProps {
+  descope_user_id?: string;
+}
+
+export const FlashLoader: React.FC<FlashLoaderProps> = ({
+  descope_user_id,
+}) => {
   const [document, setDocument] = useState<DocumentFile | null>(null);
   const [response, setResponse] = useState<FlashLoaderResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -80,7 +86,8 @@ export const FlashLoader: React.FC = () => {
         doc.base64,
         doc.file.name,
         Array.from(acceptedTypes),
-        validityPeriod.days
+        validityPeriod.days,
+        descope_user_id
       );
       const endTime = Date.now();
       setTimeSpent((endTime - startTime) / 1000);
@@ -172,6 +179,9 @@ export const FlashLoader: React.FC = () => {
       `      ]`,
       `    }`,
       `  }`,
+      ...(descope_user_id
+        ? [`  "descope_user_id": "${descope_user_id}",`]
+        : []),
       `}'`,
     ].join("\n");
     return command;
@@ -191,7 +201,7 @@ export const FlashLoader: React.FC = () => {
   };
 
   return (
-    <div className="flash-loader">
+    <div className="parcha-flash-loader">
       <div className="header">
         <h1>Document Validation Playground</h1>
         <p className="subtitle">
