@@ -1,4 +1,4 @@
-.flash-loader {
+.parcha-flash-loader {
   width: 100%;
   height: 100vh;
   background-color: #f8f9fa;
@@ -6,21 +6,21 @@
   grid-template-rows: auto 1fr;
 }
 
-.header {
+.parcha-flash-loader .header {
   text-align: center;
   padding: 1.5rem;
   background: white;
   border-bottom: 1px solid #eee;
 }
 
-.header h1 {
+.parcha-flash-loader .header h1 {
   font-size: 1.8rem;
   color: #1a1a1a;
   margin: 0 0 0.5rem 0;
   font-weight: 600;
 }
 
-.subtitle {
+.parcha-flash-loader .subtitle {
   font-size: 0.95rem;
   color: #666;
   max-width: 800px;
@@ -28,13 +28,13 @@
   line-height: 1.5;
 }
 
-.helper-text {
+.parcha-flash-loader .helper-text {
   color: #666;
   margin: 0.5rem 0 1rem;
   font-size: 0.95rem;
 }
 
-.main-content {
+.parcha-flash-loader .main-content {
   padding: 1.5rem;
   display: grid;
   grid-template-columns: minmax(400px, 2fr) 3fr;
@@ -43,16 +43,16 @@
   overflow: hidden;
 }
 
-.controls-section {
+.parcha-flash-loader .controls-section {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   height: 100%;
   overflow-y: auto;
-  min-width: 0; /* Prevent content from forcing width */
+  min-width: 0;
 }
 
-.controls-panel {
+.parcha-flash-loader .controls-panel {
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
