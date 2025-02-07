@@ -47,12 +47,14 @@ interface FlashLoaderProps {
   descope_user_id?: string;
   apiKey?: string;
   baseUrl?: string;
+  agentKey?: string;
 }
 
 export const FlashLoader: React.FC<FlashLoaderProps> = ({
   descope_user_id,
   apiKey,
   baseUrl,
+  agentKey,
 }) => {
   const [document, setDocument] = useState<DocumentFile | null>(null);
   const [response, setResponse] = useState<FlashLoaderResponse | null>(null);
@@ -73,7 +75,7 @@ export const FlashLoader: React.FC<FlashLoaderProps> = ({
   const getMissingEnvVars = () => {
     const missing = [];
     if (!apiKey && !API_KEY) missing.push("VITE_API_KEY");
-    if (!AGENT_KEY) missing.push("VITE_AGENT_KEY");
+    if (!agentKey && !AGENT_KEY) missing.push("VITE_AGENT_KEY");
     return missing;
   };
 
@@ -98,7 +100,7 @@ export const FlashLoader: React.FC<FlashLoaderProps> = ({
         {
           apiKey: apiKey || API_KEY,
           baseUrl: effectiveBaseUrl,
-          agentKey: AGENT_KEY,
+          agentKey: agentKey || AGENT_KEY,
         },
         doc.base64,
         doc.file.name,
@@ -178,7 +180,7 @@ export const FlashLoader: React.FC<FlashLoaderProps> = ({
       }' \\`,
       `-H 'Content-Type: application/json' \\`,
       `-d '{`,
-      `  "agent_key": "${AGENT_KEY}",`,
+      `  "agent_key": "${agentKey || AGENT_KEY}",`,
       `  "check_id": "kyb.proof_of_address_verification",`,
       `  "check_args": {`,
       `    "validity_period": ${validityPeriod.days},`,
