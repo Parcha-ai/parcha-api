@@ -38,9 +38,20 @@ export default defineConfig({
           "pdfjs-dist": "pdfjsLib",
           "react-dropzone": "ReactDropzone",
         },
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name === "style.css") return "flash-loader.css";
+          return assetInfo.name || "";
+        },
       },
     },
     cssCodeSplit: false,
+    cssMinify: true,
     sourcemap: true,
+  },
+  css: {
+    modules: {
+      localsConvention: "camelCase",
+      generateScopedName: "[name]__[local]___[hash:base64:5]",
+    },
   },
 });

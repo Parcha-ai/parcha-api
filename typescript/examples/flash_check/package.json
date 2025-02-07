@@ -13,14 +13,7 @@
     "directory": "typescript/examples/flash_check"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/flash-loader.js",
-      "require": "./dist/flash-loader.umd.cjs",
-      "default": "./dist/flash-loader.js"
-    },
-    "./dist/*": "./dist/*",
-    "./package.json": "./package.json",
+    ".": "./dist/flash-loader.js",
     "./style.css": "./dist/flash-loader.css"
   },
   "files": [
