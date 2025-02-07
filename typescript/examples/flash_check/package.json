@@ -7,11 +7,6 @@
   "module": "./dist/flash-loader.js",
   "types": "./dist/index.d.ts",
   "style": "./dist/flash-loader.css",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Parcha-ai/parcha-api.git",
-    "directory": "typescript/examples/flash_check"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -24,9 +19,6 @@
   },
   "files": [
     "dist"
-  ],
-  "sideEffects": [
-    "**/*.css"
   ],
   "scripts": {
     "dev": "vite",
@@ -63,10 +55,6 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
-    "@mui/material": "^5.15.0",
-    "@mui/icons-material": "^5.15.0",
-    "@emotion/react": "^11.11.0",
-    "@emotion/styled": "^11.11.0",
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
