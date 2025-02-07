@@ -13,12 +13,14 @@
       "import": "./dist/flash-loader.js",
       "require": "./dist/flash-loader.umd.cjs"
     },
-    "./dist/*": "./dist/*",
-    "./package.json": "./package.json"
+    "./style.css": "./dist/flash-loader.css",
+    "./dist/style.css": "./dist/flash-loader.css"
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
   ],
   "scripts": {
     "dev": "vite",
@@ -29,17 +31,17 @@
   },
   "peerDependencies": {
     "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "@mui/material": "^5.15.0",
+    "@mui/icons-material": "^5.15.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0"
   },
   "dependencies": {
     "@mantine/core": "7.16.1",
     "@mantine/dropzone": "7.16.1",
     "@mantine/hooks": "7.16.1",
     "@mantine/notifications": "7.16.1",
-    "@mui/material": "^5.15.0",
-    "@mui/icons-material": "^5.15.0",
-    "@emotion/react": "^11.11.0",
-    "@emotion/styled": "^11.11.0",
     "@react-pdf-viewer/core": "3.12.0",
     "@react-pdf-viewer/default-layout": "3.12.0",
     "@tabler/icons-react": "3.29.0",
@@ -56,6 +58,10 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
+    "@mui/material": "^5.15.0",
+    "@mui/icons-material": "^5.15.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
