@@ -1,5 +1,5 @@
 {
-  "name": "@parcha/flash-loader",
+  "name": "@parcha-api/flash-loader",
   "private": false,
   "version": "0.1.0",
   "type": "module",
@@ -9,12 +9,10 @@
   "style": "./dist/flash-loader.css",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "style": "./dist/flash-loader.css",
       "import": "./dist/flash-loader.js",
-      "require": "./dist/flash-loader.umd.cjs"
+      "require": "./dist/flash-loader.umd.cjs",
+      "types": "./dist/index.d.ts"
     },
-    "./dist/style.css": "./dist/flash-loader.css",
     "./style.css": "./dist/flash-loader.css"
   },
   "files": [
@@ -29,17 +27,17 @@
   },
   "peerDependencies": {
     "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "@mui/material": "^5.15.0",
-    "@mui/icons-material": "^5.15.0",
-    "@emotion/react": "^11.11.0",
-    "@emotion/styled": "^11.11.0"
+    "react-dom": "^18.0.0"
   },
   "dependencies": {
     "@mantine/core": "7.16.1",
     "@mantine/dropzone": "7.16.1",
     "@mantine/hooks": "7.16.1",
     "@mantine/notifications": "7.16.1",
+    "@mui/material": "^5.15.0",
+    "@mui/icons-material": "^5.15.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
     "@react-pdf-viewer/core": "3.12.0",
     "@react-pdf-viewer/default-layout": "3.12.0",
     "@tabler/icons-react": "3.29.0",
