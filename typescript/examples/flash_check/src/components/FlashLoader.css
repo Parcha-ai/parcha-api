@@ -398,10 +398,12 @@
 }
 
 .document-types-accordion {
-  border: 1px solid #e5e7eb;
+  border: none;
+  border-radius: 0.5rem;
   overflow: hidden;
   background: white;
   transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .document-types-accordion:hover {
@@ -413,48 +415,107 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem;
+  padding: 1rem 1.25rem;
   background: white;
-  border: none;
-  font-size: 1rem;
-  color: #1a1a1a;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  color: #1f2937;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .accordion-toggle:hover:not(:disabled) {
   background: #f8fafc;
+  border-color: #6366f1;
 }
 
 .accordion-toggle:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  background: #f9fafb;
 }
 
 .document-types {
-  padding: 1.25rem;
+  padding: 1.5rem;
   border-top: 1px solid #e5e7eb;
   background: #f8fafc;
 }
 
 .document-types h3 {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #6b7280;
-  margin: 0 0 0.75rem 0;
+  color: #4b5563;
+  margin: 0 0 1rem 0;
+  font-weight: 600;
 }
 
 .document-types-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2rem;
 }
 
 .document-type-checkbox {
-  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.document-type-checkbox:hover:not(:disabled) {
+  border-color: #6366f1;
+  background: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.document-type-checkbox input[type="checkbox"] {
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid #d1d5db;
+  border-radius: 0.25rem;
+  margin-right: 0.75rem;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.document-type-checkbox input[type="checkbox"]:checked {
+  background-color: #6366f1;
+  border-color: #6366f1;
+}
+
+.document-type-checkbox input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.document-type-checkbox input[type="checkbox"]:disabled {
+  background-color: #f3f4f6;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+}
+
+.document-type-checkbox span {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
 }
 
 .dropzone {
@@ -707,46 +768,65 @@
 }
 
 .validity-options {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
 }
 
 .validity-option {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  background-color: white;
 }
 
-.validity-option:hover {
-  background-color: #f5f5f5;
+.validity-option:hover:not(:disabled) {
+  border-color: #6366f1;
+  background: #f8fafc;
+  transform: translateY(-1px);
 }
 
 .validity-option input[type="radio"] {
-  width: 18px;
-  height: 18px;
-  margin: 0;
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+  position: relative;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.validity-option input[type="radio"]:checked {
+  border-color: #6366f1;
+}
+
+.validity-option input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #6366f1;
 }
 
 .validity-option input[type="radio"]:disabled {
+  background-color: #f3f4f6;
+  border-color: #e5e7eb;
   cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.validity-option input[type="radio"]:disabled + span {
-  opacity: 0.5;
 }
 
 .validity-option span {
-  font-size: 0.9rem;
-  color: #333;
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
 }
 
 .env-error-banner {
