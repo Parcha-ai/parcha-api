@@ -1,5 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -22,9 +27,10 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: "./src/index.ts",
+      entry: resolve(__dirname, "src/index.ts"),
       name: "FlashLoader",
-      fileName: "flash-loader",
+      fileName: (format) =>
+        `flash-loader.${format === "es" ? "js" : "umd.cjs"}`,
       formats: ["es", "umd"],
     },
     rollupOptions: {
@@ -35,6 +41,10 @@ export default defineConfig({
         "@mui/icons-material",
         "@emotion/react",
         "@emotion/styled",
+        "@react-pdf-viewer/core",
+        "@react-pdf-viewer/default-layout",
+        "pdfjs-dist",
+        "react-dropzone",
       ],
       output: {
         globals: {
@@ -44,22 +54,33 @@ export default defineConfig({
           "@mui/icons-material": "MaterialIcons",
           "@emotion/react": "emotionReact",
           "@emotion/styled": "emotionStyled",
+          "@react-pdf-viewer/core": "ReactPDFViewer",
+          "@react-pdf-viewer/default-layout": "ReactPDFViewerDefaultLayout",
+          "pdfjs-dist": "pdfjsLib",
+          "react-dropzone": "ReactDropzone",
         },
+        inlineDynamicImports: false,
+        manualChunks: undefined,
+        chunkFileNames: "[name].js",
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === "style.css") {
-            return "flash-loader.css";
-          }
+          if (assetInfo.name === "style.css") return "flash-loader.css";
           return assetInfo.name || "";
         },
       },
     },
     cssCodeSplit: false,
     cssMinify: true,
+    sourcemap: true,
   },
   css: {
     modules: {
       localsConvention: "camelCase",
       generateScopedName: "[name]__[local]___[hash:base64:5]",
+    },
+  },
+  resolve: {
+    alias: {
+      "@": resolve(__dirname, "src"),
     },
   },
 });

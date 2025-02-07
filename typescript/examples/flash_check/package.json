@@ -9,14 +9,16 @@
   "style": "./dist/flash-loader.css",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/flash-loader.js",
-      "require": "./dist/flash-loader.umd.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/flash-loader.umd.cjs"
     },
-    "./style.css": "./dist/flash-loader.css"
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "dev": "vite",
@@ -50,6 +52,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@types/node": "^20.11.30",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
