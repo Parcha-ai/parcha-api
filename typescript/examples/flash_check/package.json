@@ -7,6 +7,11 @@
   "module": "./dist/flash-loader.js",
   "types": "./dist/index.d.ts",
   "style": "./dist/flash-loader.css",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Parcha-ai/parcha-api.git",
+    "directory": "typescript/examples/flash_check"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
