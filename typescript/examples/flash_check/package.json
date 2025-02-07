@@ -1,5 +1,5 @@
 {
-  "name": "@parcha-api/flash-loader",
+  "name": "@parcha/flash-loader",
   "private": false,
   "version": "0.1.0",
   "type": "module",
@@ -13,7 +13,13 @@
     "directory": "typescript/examples/flash_check"
   },
   "exports": {
-    ".": "./dist/flash-loader.js",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "style": "./dist/flash-loader.css",
+      "import": "./dist/flash-loader.js",
+      "require": "./dist/flash-loader.umd.cjs"
+    },
+    "./dist/style.css": "./dist/flash-loader.css",
     "./style.css": "./dist/flash-loader.css"
   },
   "files": [
@@ -54,7 +60,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
-    "@types/node": "^20.11.30",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
