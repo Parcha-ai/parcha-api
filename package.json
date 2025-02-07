@@ -6,5 +6,9 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces"
+  },
+  "publishConfig": {
+    "directory": "typescript/examples/flash_check",
+    "access": "public"
   }
 } 
