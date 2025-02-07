@@ -28,16 +28,28 @@ export default defineConfig({
       formats: ["es", "umd"],
     },
     rollupOptions: {
-      external: ["react", "react-dom"],
+      external: [
+        "react",
+        "react-dom",
+        "@mui/material",
+        "@mui/icons-material",
+        "@emotion/react",
+        "@emotion/styled",
+      ],
       output: {
         globals: {
           react: "React",
           "react-dom": "ReactDOM",
+          "@mui/material": "MaterialUI",
+          "@mui/icons-material": "MaterialIcons",
+          "@emotion/react": "emotionReact",
+          "@emotion/styled": "emotionStyled",
         },
         assetFileNames: (assetInfo) => {
-          return assetInfo.name === "style.css"
-            ? "flash-loader.css"
-            : assetInfo.name || "";
+          if (assetInfo.name === "style.css") {
+            return "flash-loader.css";
+          }
+          return assetInfo.name || "";
         },
       },
     },

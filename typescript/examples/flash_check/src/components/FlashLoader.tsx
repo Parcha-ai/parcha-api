@@ -2,6 +2,13 @@ import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
+import {
+  Upload as UploadFileIcon,
+  Code as CodeIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  KeyboardArrowRight as KeyboardArrowRightIcon,
+  DeleteOutline as DeleteOutlineIcon,
+} from "@mui/icons-material";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 import {
@@ -38,10 +45,14 @@ const formatDate = (dateString: string | null) => {
 
 interface FlashLoaderProps {
   descope_user_id?: string;
+  apiKey?: string;
+  baseUrl?: string;
 }
 
 export const FlashLoader: React.FC<FlashLoaderProps> = ({
   descope_user_id,
+  apiKey,
+  baseUrl,
 }) => {
   const [document, setDocument] = useState<DocumentFile | null>(null);
   const [response, setResponse] = useState<FlashLoaderResponse | null>(null);
@@ -57,9 +68,11 @@ export const FlashLoader: React.FC<FlashLoaderProps> = ({
     VALIDITY_PERIODS[0]
   );
 
+  const effectiveBaseUrl = baseUrl ? `${baseUrl}/runFlashCheck` : API_URL;
+
   const getMissingEnvVars = () => {
     const missing = [];
-    if (!API_KEY) missing.push("VITE_API_KEY");
+    if (!apiKey && !API_KEY) missing.push("VITE_API_KEY");
     if (!AGENT_KEY) missing.push("VITE_AGENT_KEY");
     return missing;
   };
@@ -82,7 +95,11 @@ export const FlashLoader: React.FC<FlashLoaderProps> = ({
 
     try {
       const result = await checkDocument(
-        { apiKey: API_KEY, baseUrl: API_URL, agentKey: AGENT_KEY },
+        {
+          apiKey: apiKey || API_KEY,
+          baseUrl: effectiveBaseUrl,
+          agentKey: AGENT_KEY,
+        },
         doc.base64,
         doc.file.name,
         Array.from(acceptedTypes),
@@ -155,8 +172,10 @@ export const FlashLoader: React.FC<FlashLoaderProps> = ({
 
     const documentTypes = Array.from(acceptedTypes).join(",");
     const command = [
-      `curl -X POST '${API_URL}' \\`,
-      `-H 'Authorization: Bearer *****' \\`,
+      `curl -X POST '${effectiveBaseUrl}' \\`,
+      `-H 'Authorization: Bearer ${
+        apiKey ? "*".repeat(apiKey.length) : "*****"
+      }' \\`,
       `-H 'Content-Type: application/json' \\`,
       `-d '{`,
       `  "agent_key": "${AGENT_KEY}",`,
@@ -202,15 +221,6 @@ export const FlashLoader: React.FC<FlashLoaderProps> = ({
 
   return (
     <div className="parcha-flash-loader">
-      <div className="header">
-        <h1>Document Validation Playground</h1>
-        <p className="subtitle">
-          Test our document validation API by uploading business documents.
-          We'll analyze them for validity, extract key information, and provide
-          detailed feedback.
-        </p>
-      </div>
-
       {!isConfigured && (
         <div className="env-error-banner">
           <span>⚠️</span>
@@ -218,18 +228,25 @@ export const FlashLoader: React.FC<FlashLoaderProps> = ({
         </div>
       )}
 
-      <div className="main-content">
-        <div className="controls-section">
+      <div
+        className={`main-content ${loading ? "loading" : ""} ${
+          document ? "has-document" : ""
+        }`}
+      >
+        <div className="upload-section">
           <div className="controls-panel">
             <div className="document-types-accordion">
               <button
                 className="accordion-toggle"
                 onClick={() => setShowDocumentTypes(!showDocumentTypes)}
+                disabled={loading}
               >
                 <span>Validation Options</span>
-                <span className="accordion-icon">
-                  {showDocumentTypes ? "▼" : "▶"}
-                </span>
+                {showDocumentTypes ? (
+                  <KeyboardArrowDownIcon />
+                ) : (
+                  <KeyboardArrowRightIcon />
+                )}
               </button>
               {showDocumentTypes && (
                 <div className="document-types">
@@ -284,45 +301,54 @@ export const FlashLoader: React.FC<FlashLoaderProps> = ({
               {document ? (
                 <div className="file-info">
                   <p>📄 {document.file.name}</p>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDocument(null);
-                      setResponse(null);
-                    }}
-                    disabled={loading}
-                  >
-                    Remove
-                  </button>
+                  <div className="action-buttons">
+                    <button
+                      onClick={() => setShowCodeModal(true)}
+                      disabled={loading}
+                      title="View API Request"
+                    >
+                      <CodeIcon />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDocument(null);
+                        setResponse(null);
+                      }}
+                      disabled={loading}
+                      className="delete-button"
+                      title="Remove document"
+                    >
+                      <DeleteOutlineIcon />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="dropzone-content">
-                  <p className="dropzone-title">
-                    {!isConfigured
-                      ? "Configure environment variables to start"
-                      : loading
-                      ? "Processing..."
-                      : isDragActive
-                      ? "Drop your document here"
-                      : "Upload a document"}
-                  </p>
-                  {isConfigured && !loading && !isDragActive && (
-                    <p className="dropzone-subtitle">
-                      Drag & drop a PDF file here, or click to browse
+                  <div className="dropzone-icon">
+                    <UploadFileIcon
+                      style={{ fontSize: "2.5rem", color: "#6366f1" }}
+                    />
+                  </div>
+                  <div className="dropzone-text">
+                    <p className="dropzone-title">
+                      {!isConfigured
+                        ? "Configure environment variables to start"
+                        : loading
+                        ? "Processing..."
+                        : isDragActive
+                        ? "Drop your document here"
+                        : "Upload your document"}
                     </p>
-                  )}
+                    {isConfigured && !loading && !isDragActive && (
+                      <p className="dropzone-subtitle">
+                        Drag & drop a PDF file here, or click to browse
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
-
-            {document && (
-              <button
-                onClick={() => setShowCodeModal(true)}
-                className="view-code-button"
-              >
-                View API Request
-              </button>
-            )}
           </div>
 
           {response && (
@@ -349,6 +375,13 @@ export const FlashLoader: React.FC<FlashLoaderProps> = ({
                   </p>
                 </div>
 
+                <div className="analysis-section">
+                  <p>
+                    <strong>Analysis</strong>
+                  </p>
+                  <p>{response.answer}</p>
+                </div>
+
                 {response.alerts && Object.keys(response.alerts).length > 0 && (
                   <div className="alerts">
                     <p>
@@ -361,13 +394,6 @@ export const FlashLoader: React.FC<FlashLoaderProps> = ({
                     </ul>
                   </div>
                 )}
-
-                <div className="analysis-section">
-                  <p>
-                    <strong>Analysis</strong>
-                  </p>
-                  <p>{response.answer}</p>
-                </div>
 
                 <div className="document-details">
                   <h4>Document Information</h4>
@@ -428,22 +454,23 @@ export const FlashLoader: React.FC<FlashLoaderProps> = ({
           {error && <div className="error-message">{error}</div>}
 
           {loading && (
-            <div className="loading-text">
-              Analyzing your document... This usually takes 5-10 seconds.
+            <div className="loading-overlay">
+              <div className="loading-spinner"></div>
+              <p>Analyzing your document... This usually takes 5-10 seconds.</p>
             </div>
           )}
 
           <div className="pdf-container">
-            {pdfUrl ? (
+            {document && pdfUrl ? (
               <Worker workerUrl={WORKER_URL}>
                 <Viewer
                   fileUrl={pdfUrl}
                   plugins={[defaultLayoutPluginInstance]}
                 />
               </Worker>
-            ) : (
+            ) : document ? (
               <div className="pdf-loading">Loading PDF...</div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

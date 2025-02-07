@@ -9,12 +9,13 @@
   "style": "./dist/flash-loader.css",
   "exports": {
     ".": {
-      "import": "./dist/flash-loader.js",
-      "require": "./dist/flash-loader.umd.cjs",
       "types": "./dist/index.d.ts",
-      "style": "./dist/flash-loader.css"
+      "style": "./dist/flash-loader.css",
+      "import": "./dist/flash-loader.js",
+      "require": "./dist/flash-loader.umd.cjs"
     },
-    "./dist/style.css": "./dist/flash-loader.css"
+    "./dist/style.css": "./dist/flash-loader.css",
+    "./style.css": "./dist/flash-loader.css"
   },
   "files": [
     "dist"
@@ -28,10 +29,13 @@
   },
   "peerDependencies": {
     "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "@mui/material": "^5.15.0",
+    "@mui/icons-material": "^5.15.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0"
   },
   "dependencies": {
-    "@emotion/react": "11.14.0",
     "@mantine/core": "7.16.1",
     "@mantine/dropzone": "7.16.1",
     "@mantine/hooks": "7.16.1",
