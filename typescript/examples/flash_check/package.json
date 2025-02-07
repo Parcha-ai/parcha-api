@@ -3,10 +3,10 @@
   "private": false,
   "version": "0.1.0",
   "type": "module",
-  "main": "./dist/flash-loader.umd.cjs",
-  "module": "./dist/flash-loader.js",
-  "types": "./dist/index.d.ts",
-  "style": "./dist/flash-loader.css",
+  "main": "./typescript/examples/flash_check/dist/flash-loader.umd.cjs",
+  "module": "./typescript/examples/flash_check/dist/flash-loader.js",
+  "types": "./typescript/examples/flash_check/dist/index.d.ts",
+  "style": "./typescript/examples/flash_check/dist/flash-loader.css",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Parcha-ai/parcha-api.git",
@@ -14,16 +14,16 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "style": "./dist/flash-loader.css",
-      "import": "./dist/flash-loader.js",
-      "require": "./dist/flash-loader.umd.cjs"
+      "types": "./typescript/examples/flash_check/dist/index.d.ts",
+      "style": "./typescript/examples/flash_check/dist/flash-loader.css",
+      "import": "./typescript/examples/flash_check/dist/flash-loader.js",
+      "require": "./typescript/examples/flash_check/dist/flash-loader.umd.cjs"
     },
-    "./dist/style.css": "./dist/flash-loader.css",
-    "./style.css": "./dist/flash-loader.css"
+    "./dist/style.css": "./typescript/examples/flash_check/dist/flash-loader.css",
+    "./style.css": "./typescript/examples/flash_check/dist/flash-loader.css"
   },
   "files": [
-    "dist"
+    "typescript/examples/flash_check/dist"
   ],
   "sideEffects": [
     "**/*.css"
