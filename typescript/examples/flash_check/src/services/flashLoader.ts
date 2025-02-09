@@ -1,4 +1,4 @@
-import { FlashLoaderResponse, DocumentTypeValue } from "../types/flash";
+import { FlashLoaderResponse } from "../types/flash";
 
 export interface Config {
   apiKey: string;
@@ -10,8 +10,9 @@ export const checkDocument = async (
   config: Config,
   document: string,
   filename: string,
-  documentTypes: DocumentTypeValue[],
-  validityPeriod: number = 90,
+  checkArgs: Record<string, any>,
+  checkId: string,
+  documentField: string,
   descope_user_id?: string
 ): Promise<FlashLoaderResponse> => {
   const response = await fetch(`${config.baseUrl}`, {
@@ -22,17 +23,14 @@ export const checkDocument = async (
     },
     body: JSON.stringify({
       agent_key: config.agentKey,
-      check_id: "kyb.proof_of_address_verification",
-      check_args: {
-        validity_period: validityPeriod,
-        accepted_documents: documentTypes,
-      },
+      check_id: checkId,
+      check_args: checkArgs,
       kyb_schema: {
         id: "parcha-latest",
         self_attested_data: {
           business_name: "Parcha",
           registered_business_name: "Parcha Labs Inc",
-          proof_of_address_documents: [
+          [documentField]: [
             {
               b64_document: document,
               file_name: filename,

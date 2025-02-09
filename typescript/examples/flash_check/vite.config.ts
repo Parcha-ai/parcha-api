@@ -7,9 +7,9 @@ export default defineConfig({
   build: {
     lib: {
       entry: "src/index.ts",
-      name: "FlashLoader",
+      name: "ParchaDocsPlayground",
       fileName: (format) =>
-        `flash-loader.${format === "es" ? "js" : "umd.cjs"}`,
+        `docs-playground.${format === "es" ? "js" : "umd.cjs"}`,
       formats: ["es", "umd"],
     },
     rollupOptions: {
@@ -39,7 +39,7 @@ export default defineConfig({
           "react-dropzone": "ReactDropzone",
         },
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === "style.css") return "flash-loader.css";
+          if (assetInfo.name === "style.css") return "docs-playground.css";
           return assetInfo.name || "";
         },
       },

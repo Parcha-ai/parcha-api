@@ -1,21 +1,28 @@
 {
-  "name": "@parcha-api/flash-loader",
+  "name": "@parcha/docs-playground",
   "private": false,
-  "version": "0.1.0",
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "version": "0.1.8",
   "type": "module",
-  "main": "./dist/flash-loader.umd.cjs",
-  "module": "./dist/flash-loader.js",
+  "main": "./dist/docs-playground.umd.cjs",
+  "module": "./dist/docs-playground.js",
   "types": "./dist/index.d.ts",
-  "style": "./dist/flash-loader.css",
+  "style": "./dist/docs-playground.css",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "style": "./dist/flash-loader.css",
-      "import": "./dist/flash-loader.js",
-      "require": "./dist/flash-loader.umd.cjs"
+      "style": "./dist/docs-playground.css",
+      "import": "./dist/docs-playground.js",
+      "require": "./dist/docs-playground.umd.cjs"
     },
-    "./dist/style.css": "./dist/flash-loader.css",
-    "./style.css": "./dist/flash-loader.css"
+    "./dist/style.css": "./dist/docs-playground.css",
+    "./style.css": "./dist/docs-playground.css"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Parcha-ai/parcha-api.git"
   },
   "files": [
     "dist"
@@ -24,16 +31,19 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "prepare": "npm run build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
   },
   "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "@mui/material": "^5.15.0",
-    "@mui/icons-material": "^5.15.0",
-    "@emotion/react": "^11.11.0",
-    "@emotion/styled": "^11.11.0"
+    "@emotion/react": "^11.10.0",
+    "@emotion/styled": "^11.10.0",
+    "@mui/icons-material": "^5.0.0",
+    "@mui/material": "^5.0.0",
+    "react": "^17.0.0 || ^18.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0"
   },
   "dependencies": {
     "@mantine/core": "7.16.1",
@@ -51,18 +61,32 @@
     "uuid": "11.0.5"
   },
   "devDependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
     "@eslint/js": "^9.17.0",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
+    "@mui/icons-material": "^5.15.0",
+    "@mui/material": "^5.15.0",
+    "@testing-library/dom": "10.4.0",
+    "@testing-library/jest-dom": "6.6.3",
+    "@testing-library/react": "16.2.0",
+    "@testing-library/user-event": "14.6.1",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.14.0",
+    "jsdom": "26.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.2",
-    "vite": "^6.0.5"
+    "vite": "^6.0.5",
+    "vite-plugin-dts": "^3.7.2",
+    "vitest": "3.0.5",
+    "vitest-dom": "0.1.1"
   }
 }

@@ -1,10 +1,10 @@
-import { FlashLoader } from "./components/FlashLoader";
+import { DocsPlayground } from "./components/docs-playground";
 import "./App.css";
 
 function App() {
   return (
-    <div className="app">
-      <FlashLoader />
+    <div className="App">
+      <DocsPlayground type="business_proof_of_address" />
     </div>
   );
 }
