@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
@@ -20,6 +20,8 @@ import {
   FlashLoaderType,
   FLASH_LOADER_CONFIGS,
   JurisdictionOption,
+  IncorporationFlashCheckResult,
+  ProofOfAddressFlashCheckResult,
 } from "../types/flash";
 import { fileToBase64, isValidPDF } from "../utils/file";
 import { checkDocument } from "../services/flashLoader";
@@ -56,7 +58,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   baseUrl = import.meta.env.VITE_API_URL || DEFAULT_API_URL,
   agentKey = import.meta.env.VITE_AGENT_KEY,
 }) => {
-  const config = FLASH_LOADER_CONFIGS[type];
+  const config = useMemo(() => FLASH_LOADER_CONFIGS[type], [type]);
   const [document, setDocument] = useState<DocumentFile | null>(null);
   const [response, setResponse] = useState<FlashLoaderResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -79,62 +81,93 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   const isConfigured = !!(apiKey && agentKey);
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
-  const checkDocumentWithApi = async (doc: DocumentFile) => {
-    if (!isConfigured) return;
+  const checkDocumentWithApi = useCallback(
+    async (doc: DocumentFile) => {
+      if (!isConfigured) return;
 
-    if (config.documentTypes && acceptedTypes.size === 0) {
-      setError("Please select at least one document type");
-      return;
-    }
+      if (config.documentTypes && acceptedTypes.size === 0) {
+        setError("Please select at least one document type");
+        return;
+      }
 
-    setLoading(true);
-    setError(null);
-    const startTime = Date.now();
+      setLoading(true);
+      setError(null);
+      const startTime = Date.now();
 
-    try {
-      const checkArgs = {
-        ...config.checkArgs,
-        ...(config.showValidityPeriod
-          ? { validity_period: validityPeriod.days }
-          : {}),
-        ...(config.documentTypes
-          ? { accepted_documents: Array.from(acceptedTypes) }
-          : {}),
-        ...(selectedJurisdiction.state && {
-          jurisdiction: {
-            state: selectedJurisdiction.state,
-            country: selectedJurisdiction.country,
+      try {
+        const checkArgs = {
+          ...config.checkArgs,
+          ...(config.showValidityPeriod
+            ? { validity_period: validityPeriod.days }
+            : {}),
+          ...(config.documentTypes
+            ? { accepted_documents: Array.from(acceptedTypes) }
+            : {}),
+        };
+
+        const kybSchema = {
+          id: "parcha-latest",
+          self_attested_data: {
+            business_name: "Parcha",
+            registered_business_name: "Parcha Labs Inc",
+            ...(type === "incorporation" &&
+              selectedJurisdiction.state && {
+                address_of_operation: {
+                  state: selectedJurisdiction.state,
+                  country_code: "US",
+                },
+              }),
+            [config.documentField]: [
+              {
+                b64_document: doc.base64,
+                file_name: doc.file.name,
+                source_type: "file_url",
+              },
+            ],
           },
-        }),
-      };
+        };
 
-      const result = await checkDocument(
-        {
-          apiKey,
-          baseUrl: effectiveBaseUrl,
-          agentKey,
-        },
-        doc.base64,
-        doc.file.name,
-        checkArgs,
-        config.checkId,
-        config.documentField,
-        descope_user_id
-      );
-      const endTime = Date.now();
-      setTimeSpent((endTime - startTime) / 1000);
-      log.info("flash_loader_response", {
-        time_spent: (endTime - startTime) / 1000,
-        full_response: result,
-      });
-      setResponse(result);
-    } catch (err) {
-      setError((err as Error).message);
-      setTimeSpent(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+        const result = await checkDocument(
+          {
+            apiKey,
+            baseUrl: effectiveBaseUrl,
+            agentKey,
+          },
+          doc.base64,
+          doc.file.name,
+          checkArgs,
+          config.checkId,
+          config.documentField,
+          descope_user_id,
+          kybSchema
+        );
+        const endTime = Date.now();
+        setTimeSpent((endTime - startTime) / 1000);
+        log.info("flash_loader_response", {
+          time_spent: (endTime - startTime) / 1000,
+          full_response: result,
+        });
+        setResponse(result);
+      } catch (err) {
+        setError((err as Error).message);
+        setTimeSpent(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [
+      config,
+      acceptedTypes,
+      validityPeriod,
+      selectedJurisdiction,
+      isConfigured,
+      apiKey,
+      effectiveBaseUrl,
+      agentKey,
+      descope_user_id,
+      type,
+    ]
+  );
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -157,7 +190,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
         log.error("file_processing_error", err as Error);
       }
     },
-    [acceptedTypes, validityPeriod]
+    [checkDocumentWithApi]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -193,12 +226,6 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       ...(config.documentTypes
         ? { accepted_documents: Array.from(acceptedTypes) }
         : {}),
-      ...(selectedJurisdiction.state && {
-        jurisdiction: {
-          state: selectedJurisdiction.state,
-          country: selectedJurisdiction.country,
-        },
-      }),
     };
 
     const command = [
@@ -218,6 +245,14 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       `    "self_attested_data": {`,
       `      "business_name": "Parcha",`,
       `      "registered_business_name": "Parcha Labs Inc",`,
+      ...(type === "incorporation" && selectedJurisdiction.state
+        ? [
+            `      "address_of_operation": {`,
+            `        "state": "${selectedJurisdiction.state}",`,
+            `        "country_code": "US"`,
+            `      },`,
+          ]
+        : []),
       `      "${config.documentField}": [`,
       `        {`,
       `          "b64_document": "<B64_DOC>",`,
@@ -481,50 +516,114 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                 <div className="document-details">
                   <h4>Document Information</h4>
                   <div className="document-item">
-                    <p>
-                      <strong>Company</strong>
-                      {response.payload.company_name || "Not available"}
-                    </p>
-                    <p>
-                      <strong>Document Type</strong>
-                      {response.payload.document_type || "Not available"}
-                    </p>
-                    <p>
-                      <strong>Document Date</strong>
-                      {formatDate(response.payload.document_date) ||
-                        "Not available"}
-                    </p>
-
-                    {response.payload.document_address && (
-                      <div className="address-details">
+                    {type === "incorporation" ? (
+                      <>
                         <p>
-                          <strong>Address</strong>
+                          <strong>Company Name: </strong>
+                          {response.payload.company_name || "Not available"}
                         </p>
-                        {response.payload.document_address.street_1 && (
-                          <p>{response.payload.document_address.street_1}</p>
+                        <p>
+                          <strong>Jurisdiction: </strong>
+                          {(response.payload as IncorporationFlashCheckResult)
+                            .jurisdiction?.state || "Not available"}
+                        </p>
+                        <p>
+                          <strong>Document Date: </strong>
+                          {formatDate(response.payload.document_date) ||
+                            "Not available"}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          <strong>Company: </strong>
+                          {response.payload.company_name || "Not available"}
+                        </p>
+                        {response.payload.type ===
+                          "ProofOfAddressFlashCheckResult" && (
+                          <>
+                            <p>
+                              <strong>Document Type: </strong>
+                              {(
+                                response.payload as ProofOfAddressFlashCheckResult
+                              ).document_type || "Not available"}
+                            </p>
+                            <p>
+                              <strong>Document Date: </strong>
+                              {formatDate(response.payload.document_date) ||
+                                "Not available"}
+                            </p>
+
+                            {(
+                              response.payload as ProofOfAddressFlashCheckResult
+                            ).document_address && (
+                              <div className="address-details">
+                                <p>
+                                  <strong>Address</strong>
+                                </p>
+                                {(
+                                  response.payload as ProofOfAddressFlashCheckResult
+                                ).document_address.street_1 && (
+                                  <p>
+                                    {
+                                      (
+                                        response.payload as ProofOfAddressFlashCheckResult
+                                      ).document_address.street_1
+                                    }
+                                  </p>
+                                )}
+                                {(
+                                  response.payload as ProofOfAddressFlashCheckResult
+                                ).document_address.street_2 && (
+                                  <p>
+                                    {
+                                      (
+                                        response.payload as ProofOfAddressFlashCheckResult
+                                      ).document_address.street_2
+                                    }
+                                  </p>
+                                )}
+                                {((
+                                  response.payload as ProofOfAddressFlashCheckResult
+                                ).document_address.city ||
+                                  (
+                                    response.payload as ProofOfAddressFlashCheckResult
+                                  ).document_address.state ||
+                                  (
+                                    response.payload as ProofOfAddressFlashCheckResult
+                                  ).document_address.postal_code) && (
+                                  <p>
+                                    {[
+                                      (
+                                        response.payload as ProofOfAddressFlashCheckResult
+                                      ).document_address.city,
+                                      (
+                                        response.payload as ProofOfAddressFlashCheckResult
+                                      ).document_address.state,
+                                      (
+                                        response.payload as ProofOfAddressFlashCheckResult
+                                      ).document_address.postal_code,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(", ")}
+                                  </p>
+                                )}
+                                {(
+                                  response.payload as ProofOfAddressFlashCheckResult
+                                ).document_address.country_code && (
+                                  <p>
+                                    {
+                                      (
+                                        response.payload as ProofOfAddressFlashCheckResult
+                                      ).document_address.country_code
+                                    }
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </>
                         )}
-                        {response.payload.document_address.street_2 && (
-                          <p>{response.payload.document_address.street_2}</p>
-                        )}
-                        {(response.payload.document_address.city ||
-                          response.payload.document_address.state ||
-                          response.payload.document_address.postal_code) && (
-                          <p>
-                            {[
-                              response.payload.document_address.city,
-                              response.payload.document_address.state,
-                              response.payload.document_address.postal_code,
-                            ]
-                              .filter(Boolean)
-                              .join(", ")}
-                          </p>
-                        )}
-                        {response.payload.document_address.country_code && (
-                          <p>
-                            {response.payload.document_address.country_code}
-                          </p>
-                        )}
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>

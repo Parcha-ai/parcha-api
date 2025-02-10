@@ -174,6 +174,21 @@ export interface ProofOfAddressFlashCheckResult {
   document_address: Address;
 }
 
+export interface IncorporationFlashCheckResult {
+  type: string;
+  company_name: string;
+  document_date: string;
+  jurisdiction: {
+    type: string;
+    street_1: string | null;
+    street_2: string | null;
+    city: string | null;
+    state: string;
+    country_code: string;
+    postal_code: string | null;
+  };
+}
+
 export interface FlashLoaderResponse {
   agent_instance_id: string;
   error: string | null;
@@ -189,7 +204,7 @@ export interface FlashLoaderResponse {
   check_args: CheckArguments;
   created_at: string;
   command_name: string;
-  payload: ProofOfAddressFlashCheckResult;
+  payload: ProofOfAddressFlashCheckResult | IncorporationFlashCheckResult;
   status: string;
   data_loader_args: Record<string, unknown>;
   job_id: string;

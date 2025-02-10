@@ -13,7 +13,8 @@ export const checkDocument = async (
   checkArgs: Record<string, any>,
   checkId: string,
   documentField: string,
-  descope_user_id?: string
+  descope_user_id?: string,
+  kybSchema?: Record<string, any>
 ): Promise<FlashLoaderResponse> => {
   const response = await fetch(`${config.baseUrl}`, {
     method: "POST",
@@ -25,7 +26,7 @@ export const checkDocument = async (
       agent_key: config.agentKey,
       check_id: checkId,
       check_args: checkArgs,
-      kyb_schema: {
+      kyb_schema: kybSchema || {
         id: "parcha-latest",
         self_attested_data: {
           business_name: "Parcha",
