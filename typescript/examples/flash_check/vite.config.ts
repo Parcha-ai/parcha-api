@@ -4,6 +4,13 @@ import react from "@vitejs/plugin-react";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  css: {
+    postcss: "./postcss.config.js",
+    modules: {
+      localsConvention: "camelCase",
+      generateScopedName: "[name]__[local]___[hash:base64:5]",
+    },
+  },
   build: {
     lib: {
       entry: "src/index.ts",
@@ -47,11 +54,5 @@ export default defineConfig({
     cssCodeSplit: false,
     cssMinify: true,
     sourcemap: true,
-  },
-  css: {
-    modules: {
-      localsConvention: "camelCase",
-      generateScopedName: "[name]__[local]___[hash:base64:5]",
-    },
   },
 });

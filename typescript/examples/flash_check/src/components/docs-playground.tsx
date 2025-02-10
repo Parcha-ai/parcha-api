@@ -52,9 +52,9 @@ export interface DocsPlaygroundProps {
 export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   type,
   descope_user_id,
-  apiKey = undefined,
-  baseUrl = DEFAULT_API_URL,
-  agentKey = undefined,
+  apiKey = import.meta.env.VITE_API_KEY,
+  baseUrl = import.meta.env.VITE_API_URL || DEFAULT_API_URL,
+  agentKey = import.meta.env.VITE_AGENT_KEY,
 }) => {
   const config = FLASH_LOADER_CONFIGS[type];
   const [document, setDocument] = useState<DocumentFile | null>(null);
@@ -185,7 +185,22 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   const getCurlCommand = () => {
     if (!document) return "";
 
-    const documentTypes = Array.from(acceptedTypes).join(",");
+    const checkArgs = {
+      ...config.checkArgs,
+      ...(config.showValidityPeriod
+        ? { validity_period: validityPeriod.days }
+        : {}),
+      ...(config.documentTypes
+        ? { accepted_documents: Array.from(acceptedTypes) }
+        : {}),
+      ...(selectedJurisdiction.state && {
+        jurisdiction: {
+          state: selectedJurisdiction.state,
+          country: selectedJurisdiction.country,
+        },
+      }),
+    };
+
     const command = [
       `curl -X POST '${effectiveBaseUrl}' \\`,
       `-H 'Authorization: Bearer ${
@@ -194,17 +209,16 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       `-H 'Content-Type: application/json' \\`,
       `-d '{`,
       `  "agent_key": "${agentKey}",`,
-      `  "check_id": "kyb.proof_of_address_verification",`,
-      `  "check_args": {`,
-      `    "validity_period": ${validityPeriod.days},`,
-      `    "accepted_documents": ["${documentTypes}"]`,
-      `  },`,
+      `  "check_id": "${config.checkId}",`,
+      `  "check_args": ${JSON.stringify(checkArgs, null, 4)
+        .split("\n")
+        .join("\n  ")},`,
       `  "kyb_schema": {`,
       `    "id": "parcha-latest",`,
       `    "self_attested_data": {`,
       `      "business_name": "Parcha",`,
       `      "registered_business_name": "Parcha Labs Inc",`,
-      `      "proof_of_address_documents": [`,
+      `      "${config.documentField}": [`,
       `        {`,
       `          "b64_document": "<B64_DOC>",`,
       `          "file_name": "${document.file.name}",`,
@@ -356,61 +370,65 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
               </div>
             )}
 
-            <div
-              {...getRootProps()}
-              className={`dropzone ${isDragActive ? "active" : ""} ${
-                document ? "has-file" : ""
-              } ${!isConfigured || loading ? "disabled" : ""}`}
-            >
-              <input {...getInputProps()} />
-              {document ? (
-                <div className="file-info">
-                  <p>📄 {document.file.name}</p>
-                  <div className="action-buttons">
-                    <button
-                      onClick={() => setShowCodeModal(true)}
-                      disabled={loading}
-                      title="View API Request"
-                    >
-                      <CodeIcon />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDocument(null);
-                        setResponse(null);
-                      }}
-                      disabled={loading}
-                      className="delete-button"
-                      title="Remove document"
-                    >
-                      <DeleteOutlineIcon />
-                    </button>
+            <div className="flex gap-4">
+              <div
+                {...getRootProps()}
+                className={`flex-1 dropzone ${isDragActive ? "active" : ""} ${
+                  document ? "has-file" : ""
+                } ${!isConfigured || loading ? "disabled" : ""}`}
+              >
+                <input {...getInputProps()} />
+                {document ? (
+                  <div className="file-info">
+                    <p>📄 {document.file.name}</p>
                   </div>
-                </div>
-              ) : (
-                <div className="dropzone-content">
-                  <div className="dropzone-icon">
-                    <UploadFileIcon
-                      style={{ fontSize: "2.5rem", color: "#6366f1" }}
-                    />
-                  </div>
-                  <div className="dropzone-text">
-                    <p className="dropzone-title">
-                      {!isConfigured
-                        ? "Configure environment variables to start"
-                        : loading
-                        ? "Processing..."
-                        : isDragActive
-                        ? "Drop your document here"
-                        : "Upload your document"}
-                    </p>
-                    {isConfigured && !loading && !isDragActive && (
-                      <p className="dropzone-subtitle">
-                        Drag & drop a PDF file here, or click to browse
+                ) : (
+                  <div className="dropzone-content">
+                    <div className="dropzone-icon">
+                      <UploadFileIcon
+                        style={{ fontSize: "2.5rem", color: "#6366f1" }}
+                      />
+                    </div>
+                    <div className="dropzone-text">
+                      <p className="dropzone-title">
+                        {!isConfigured
+                          ? "Configure environment variables to start"
+                          : loading
+                          ? "Processing..."
+                          : isDragActive
+                          ? "Drop your document here"
+                          : "Upload your document"}
                       </p>
-                    )}
+                      {isConfigured && !loading && !isDragActive && (
+                        <p className="dropzone-subtitle">
+                          Drag & drop a PDF file here, or click to browse
+                        </p>
+                      )}
+                    </div>
                   </div>
+                )}
+              </div>
+              {document && (
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setShowCodeModal(true)}
+                    disabled={loading}
+                    title="View API Request"
+                    className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                  >
+                    <CodeIcon />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDocument(null);
+                      setResponse(null);
+                    }}
+                    disabled={loading}
+                    title="Remove document"
+                    className="p-2 rounded-md hover:bg-red-100 text-red-600 transition-colors"
+                  >
+                    <DeleteOutlineIcon />
+                  </button>
                 </div>
               )}
             </div>

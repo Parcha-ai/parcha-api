@@ -134,7 +134,7 @@ export const FLASH_LOADER_CONFIGS: Record<FlashLoaderType, FlashLoaderConfig> =
     },
     incorporation: {
       type: "incorporation",
-      checkId: "kyb.documentextraction",
+      checkId: "kyb.incorporation_document_verification",
       documentField: "incorporation_documents",
       checkArgs: {},
       showValidityPeriod: false,
