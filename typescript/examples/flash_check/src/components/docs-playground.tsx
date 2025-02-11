@@ -735,7 +735,6 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                                 <p>
                                   <strong>Address</strong>
                                 </p>
-                                i{" "}
                                 {(
                                   response.payload as ProofOfAddressFlashCheckResult
                                 ).document_address.street_1 && (
