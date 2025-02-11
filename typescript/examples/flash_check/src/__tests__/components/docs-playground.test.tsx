@@ -598,4 +598,50 @@ describe("DocsPlayground Component", () => {
     const pdfViewer = screen.getByTestId("mock-pdf-viewer");
     expect(pdfViewer).toBeInTheDocument();
   });
+
+  it("shows debug panel when showDebugPanel is true", () => {
+    const { container } = render(
+      <DocsPlayground
+        type="business_proof_of_address"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+        showDebugPanel={true}
+      />
+    );
+
+    // Debug panel should be visible
+    const debugPanel = container.querySelector("div[style*='position: fixed']");
+    expect(debugPanel).toBeInTheDocument();
+    expect(debugPanel).toHaveTextContent("Debug Info:");
+    expect(debugPanel).toHaveTextContent("Type: business_proof_of_address");
+  });
+
+  it("hides debug panel when showDebugPanel is false", () => {
+    const { container } = render(
+      <DocsPlayground
+        type="business_proof_of_address"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+        showDebugPanel={false}
+      />
+    );
+
+    // Debug panel should not be visible
+    const debugPanel = container.querySelector("div[style*='position: fixed']");
+    expect(debugPanel).not.toBeInTheDocument();
+  });
+
+  it("hides debug panel by default", () => {
+    const { container } = render(
+      <DocsPlayground
+        type="business_proof_of_address"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+      />
+    );
+
+    // Debug panel should not be visible by default
+    const debugPanel = container.querySelector("div[style*='position: fixed']");
+    expect(debugPanel).not.toBeInTheDocument();
+  });
 });

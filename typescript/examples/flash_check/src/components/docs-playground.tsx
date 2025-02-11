@@ -50,6 +50,7 @@ export interface DocsPlaygroundProps {
   agentKey?: string;
   initialResponse?: FlashLoaderResponse;
   playgroundMode?: boolean;
+  showDebugPanel?: boolean;
 }
 
 export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
@@ -60,12 +61,8 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   agentKey = import.meta.env.VITE_AGENT_KEY,
   initialResponse,
   playgroundMode = true,
+  showDebugPanel = false,
 }) => {
-  console.log("DocsPlayground rendering with props:", {
-    type,
-    initialResponse,
-  });
-
   const config = useMemo(() => FLASH_LOADER_CONFIGS[type], [type]);
   const [document, setDocument] = useState<DocumentFile | null>(null);
   const [response, setResponse] = useState<FlashLoaderResponse | null>(null);
@@ -102,7 +99,6 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
   // Force update response when initialResponse changes
   useEffect(() => {
-    console.log("initialResponse changed:", initialResponse);
     if (initialResponse) {
       setResponse(initialResponse);
       if (initialResponse.input_data?.document?.url) {
@@ -122,7 +118,6 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
   // Reset state when type changes
   useEffect(() => {
-    console.log("type changed:", type);
     if (!initialResponse) {
       setDocument(null);
       setResponse(null);
@@ -388,7 +383,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       data-type={type}
       data-playground-mode={playgroundMode}
     >
-      {renderDebugPanel()}
+      {showDebugPanel && renderDebugPanel()}
       {!isConfigured && (
         <div className="env-error-banner" data-testid="env-error-banner">
           <span>⚠️</span>
