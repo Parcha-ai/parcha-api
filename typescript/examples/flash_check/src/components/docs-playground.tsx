@@ -108,7 +108,9 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           file: new File(
             [],
             initialResponse.input_data.document.file_name || "document.pdf",
-            { type: "application/pdf" }
+            {
+              type: "application/pdf",
+            }
           ),
           base64: "",
         });
@@ -119,8 +121,8 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   // Reset state when type changes
   useEffect(() => {
     console.log("type changed:", type);
-    setDocument(null);
     if (!initialResponse) {
+      setDocument(null);
       setResponse(null);
     }
   }, [type, initialResponse]);
@@ -279,6 +281,10 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   const getPdfUrl = (response: FlashLoaderResponse) => {
     const url = response.input_data.document.url;
     if (!url) return null;
+
+    if (url.startsWith("https://demo.parcha.ai/getDocument")) {
+      return url;
+    }
 
     const proxyUrl = new URL("https://demo.parcha.ai/getDocument");
     proxyUrl.searchParams.set("case_id", response.command_instance_id);

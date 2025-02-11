@@ -486,4 +486,49 @@ describe("DocsPlayground Component", () => {
       screen.getByText(/Bank statement is valid proof of address/)
     ).toBeInTheDocument();
   });
+
+  it("renders PDF viewer correctly with initialResponse", async () => {
+    // Create a mock response with a specific PDF URL
+    const mockResponseWithPdf = {
+      ...mockInitialResponse,
+      input_data: {
+        ...mockInitialResponse.input_data,
+        document: {
+          ...mockInitialResponse.input_data.document,
+          url: "https://storage.googleapis.com/test-bucket/test.pdf",
+          file_name: "test_document.pdf",
+        },
+      },
+    };
+
+    render(
+      <DocsPlayground
+        type="business_proof_of_address"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+        initialResponse={mockResponseWithPdf}
+      />
+    );
+
+    // Wait for the PDF viewer to be rendered
+    await waitFor(() => {
+      // Check if the PDF viewer component is rendered
+      const pdfViewer = screen.getByTestId("mock-pdf-viewer");
+      expect(pdfViewer).toBeInTheDocument();
+    });
+
+    // Verify the document state is set correctly
+    const fileInfo = screen.getByText("📄 test_document.pdf");
+    expect(fileInfo).toBeInTheDocument();
+
+    // Verify the preview section is rendered
+    const previewSection = document.querySelector(".preview-section");
+    expect(previewSection).toBeInTheDocument();
+
+    // Verify no loading state is shown
+    expect(screen.queryByTestId("loading-spinner")).not.toBeInTheDocument();
+
+    // Verify no error messages are shown
+    expect(screen.queryByTestId("error-message")).not.toBeInTheDocument();
+  });
 });
