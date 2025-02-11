@@ -16,7 +16,10 @@ export interface FlashContextType {
   clearMessages: () => void;
 }
 
-export type FlashLoaderType = "incorporation" | "business_proof_of_address";
+export type FlashLoaderType =
+  | "incorporation"
+  | "business_proof_of_address"
+  | "ein";
 
 export interface FlashLoaderConfig {
   type: FlashLoaderType;
@@ -140,6 +143,13 @@ export const FLASH_LOADER_CONFIGS: Record<FlashLoaderType, FlashLoaderConfig> =
       showValidityPeriod: false,
       jurisdictions: US_JURISDICTIONS,
     },
+    ein: {
+      type: "ein",
+      checkId: "kyb.ein_document_verification",
+      documentField: "ein_documents",
+      checkArgs: {},
+      showValidityPeriod: false,
+    },
   };
 
 export interface CheckArguments {
@@ -189,6 +199,13 @@ export interface IncorporationFlashCheckResult {
   };
 }
 
+export interface EinFlashCheckResult {
+  type: string;
+  company_name: string;
+  document_date: string;
+  ein: string;
+}
+
 export interface FlashLoaderResponse {
   agent_instance_id: string;
   error: string | null;
@@ -204,7 +221,10 @@ export interface FlashLoaderResponse {
   check_args: CheckArguments;
   created_at: string;
   command_name: string;
-  payload: ProofOfAddressFlashCheckResult | IncorporationFlashCheckResult;
+  payload:
+    | ProofOfAddressFlashCheckResult
+    | IncorporationFlashCheckResult
+    | EinFlashCheckResult;
   status: string;
   data_loader_args: Record<string, unknown>;
   job_id: string;

@@ -19,6 +19,8 @@ export default defineConfig({
         `docs-playground.${format === "es" ? "js" : "umd.cjs"}`,
       formats: ["es", "umd"],
     },
+    minify: false,
+    sourcemap: "inline",
     rollupOptions: {
       external: [
         "react",
@@ -49,10 +51,10 @@ export default defineConfig({
           if (assetInfo.name === "style.css") return "docs-playground.css";
           return assetInfo.name || "";
         },
+        sourcemap: true,
       },
     },
     cssCodeSplit: false,
-    cssMinify: true,
-    sourcemap: true,
+    cssMinify: false,
   },
 });

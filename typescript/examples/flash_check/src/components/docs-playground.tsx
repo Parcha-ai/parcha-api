@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
@@ -22,6 +22,7 @@ import {
   JurisdictionOption,
   IncorporationFlashCheckResult,
   ProofOfAddressFlashCheckResult,
+  EinFlashCheckResult,
 } from "../types/flash";
 import { fileToBase64, isValidPDF } from "../utils/file";
 import { checkDocument } from "../services/flashLoader";
@@ -38,8 +39,6 @@ const formatDate = (dateString: string | null) => {
     year: "numeric",
     month: "long",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 };
 
@@ -49,6 +48,7 @@ export interface DocsPlaygroundProps {
   apiKey?: string;
   baseUrl?: string;
   agentKey?: string;
+  initialResponse?: FlashLoaderResponse;
 }
 
 export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
@@ -57,13 +57,20 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   apiKey = import.meta.env.VITE_API_KEY,
   baseUrl = import.meta.env.VITE_API_URL || DEFAULT_API_URL,
   agentKey = import.meta.env.VITE_AGENT_KEY,
+  initialResponse,
 }) => {
+  console.log("DocsPlayground rendering with props:", {
+    type,
+    initialResponse,
+  });
+
   const config = useMemo(() => FLASH_LOADER_CONFIGS[type], [type]);
   const [document, setDocument] = useState<DocumentFile | null>(null);
   const [response, setResponse] = useState<FlashLoaderResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeSpent, setTimeSpent] = useState<number | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const [acceptedTypes, setAcceptedTypes] = useState<Set<DocumentTypeValue>>(
     new Set(config.documentTypes?.map((dt) => dt.value) || [])
   );
@@ -76,10 +83,74 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   const [validityPeriod, setValidityPeriod] = useState<ValidityPeriod>(
     VALIDITY_PERIODS[0]
   );
+  const [einNumber, setEinNumber] = useState<string>("");
 
   const effectiveBaseUrl = `${baseUrl}/runFlashCheck`;
   const isConfigured = !!(apiKey && agentKey);
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
+
+  // Add debug info
+  const addDebugInfo = useCallback((info: string) => {
+    setDebugInfo((prev) => [...prev.slice(-4), info]); // Keep last 5 messages
+  }, []);
+
+  useEffect(() => {
+    addDebugInfo(`Type changed to: ${type}`);
+  }, [type, addDebugInfo]);
+
+  // Force update response when initialResponse changes
+  useEffect(() => {
+    console.log("initialResponse changed:", initialResponse);
+    if (initialResponse) {
+      setResponse(initialResponse);
+      if (initialResponse.input_data?.document?.url) {
+        setDocument({
+          file: new File(
+            [],
+            initialResponse.input_data.document.file_name || "document.pdf",
+            { type: "application/pdf" }
+          ),
+          base64: "",
+        });
+      }
+    }
+  }, [initialResponse]);
+
+  // Reset state when type changes
+  useEffect(() => {
+    console.log("type changed:", type);
+    setDocument(null);
+    if (!initialResponse) {
+      setResponse(null);
+    }
+  }, [type, initialResponse]);
+
+  // Add debug panel to the UI
+  const renderDebugPanel = () => (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 0,
+        right: 0,
+        background: "#f0f0f0",
+        padding: "10px",
+        maxWidth: "400px",
+        zIndex: 9999,
+        fontSize: "12px",
+        fontFamily: "monospace",
+      }}
+    >
+      <div>Debug Info:</div>
+      <div>Type: {type}</div>
+      <div>Has Initial Response: {initialResponse ? "Yes" : "No"}</div>
+      <div>Has Response State: {response ? "Yes" : "No"}</div>
+      <div>Response ID: {response?.command_instance_id || "None"}</div>
+      <div>Recent Events:</div>
+      {debugInfo.map((info, i) => (
+        <div key={i}>{info}</div>
+      ))}
+    </div>
+  );
 
   const checkDocumentWithApi = useCallback(
     async (doc: DocumentFile) => {
@@ -103,6 +174,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           ...(config.documentTypes
             ? { accepted_documents: Array.from(acceptedTypes) }
             : {}),
+          ...(type === "ein" && einNumber ? { ein_number: einNumber } : {}),
         };
 
         const kybSchema = {
@@ -141,6 +213,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           descope_user_id,
           kybSchema
         );
+
         const endTime = Date.now();
         setTimeSpent((endTime - startTime) / 1000);
         log.info("flash_loader_response", {
@@ -166,6 +239,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       agentKey,
       descope_user_id,
       type,
+      einNumber,
     ]
   );
 
@@ -271,20 +345,38 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   };
 
   const toggleDocumentType = (value: DocumentTypeValue) => {
-    const newTypes = new Set(acceptedTypes);
-    if (newTypes.has(value)) {
-      if (newTypes.size > 1) {
-        newTypes.delete(value);
-        setAcceptedTypes(newTypes);
+    setAcceptedTypes((prevTypes) => {
+      const currentTypes = Array.from(prevTypes);
+      const isCurrentlyChecked = currentTypes.includes(value);
+
+      // If trying to uncheck and it would leave us with no checkboxes, prevent it
+      if (isCurrentlyChecked && currentTypes.length <= 1) {
+        return prevTypes;
       }
-    } else {
-      newTypes.add(value);
-      setAcceptedTypes(newTypes);
-    }
+
+      // Otherwise update the types
+      const newTypes = isCurrentlyChecked
+        ? currentTypes.filter((t) => t !== value)
+        : [...currentTypes, value];
+
+      // Double check we're not somehow ending up with no checkboxes
+      if (newTypes.length === 0) {
+        return prevTypes;
+      }
+
+      return new Set(newTypes);
+    });
   };
 
   return (
-    <div className="docs-playground">
+    <div
+      key={`${type}-${initialResponse?.command_instance_id || "new"}`}
+      className="docs-playground"
+      data-response-id={response?.command_instance_id}
+      data-has-response={!!response}
+      data-type={type}
+    >
+      {renderDebugPanel()}
       {!isConfigured && (
         <div className="env-error-banner" data-testid="env-error-banner">
           <span>⚠️</span>
@@ -298,6 +390,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
         className={`main-content ${loading ? "loading" : ""} ${
           document ? "has-document" : ""
         }`}
+        data-testid="main-content"
       >
         <div className="upload-section">
           <div className="controls-panel">
@@ -352,6 +445,22 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                       </>
                     )}
 
+                    {type === "ein" && (
+                      <>
+                        <h3>EIN Number (Optional)</h3>
+                        <div className="ein-input">
+                          <input
+                            type="text"
+                            value={einNumber}
+                            onChange={(e) => setEinNumber(e.target.value)}
+                            placeholder="Enter EIN number to validate"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            disabled={loading}
+                          />
+                        </div>
+                      </>
+                    )}
+
                     {config.documentTypes && (
                       <>
                         <h3>Document Types</h3>
@@ -364,12 +473,15 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                               <input
                                 type="checkbox"
                                 checked={acceptedTypes.has(type.value)}
-                                onChange={() => toggleDocumentType(type.value)}
+                                onChange={() => {
+                                  toggleDocumentType(type.value);
+                                }}
                                 disabled={
                                   loading ||
                                   (acceptedTypes.size === 1 &&
                                     acceptedTypes.has(type.value))
                                 }
+                                data-testid={`checkbox-${type.value}`}
                               />
                               <span>{type.label}</span>
                             </label>
@@ -470,7 +582,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           </div>
 
           {response && (
-            <div className="results-container">
+            <div className="results-container" data-testid="results-container">
               <div
                 className={`result ${response.passed ? "success" : "failure"}`}
               >
@@ -513,7 +625,10 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                   </div>
                 )}
 
-                <div className="document-details">
+                <div
+                  className="document-details"
+                  data-testid="document-details"
+                >
                   <h4>Document Information</h4>
                   <div className="document-item">
                     {type === "incorporation" ? (
@@ -530,6 +645,23 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                         <p>
                           <strong>Document Date: </strong>
                           {formatDate(response.payload.document_date) ||
+                            "Not available"}
+                        </p>
+                      </>
+                    ) : type === "ein" ? (
+                      <>
+                        <p>
+                          <strong>Company Name: </strong>
+                          {response.payload.company_name || "Not available"}
+                        </p>
+                        <p>
+                          <strong>Document Date: </strong>
+                          {formatDate(response.payload.document_date) ||
+                            "Not available"}
+                        </p>
+                        <p data-testid="ein-number">
+                          <strong>EIN Number: </strong>
+                          {(response.payload as EinFlashCheckResult).ein ||
                             "Not available"}
                         </p>
                       </>
@@ -561,6 +693,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                                 <p>
                                   <strong>Address</strong>
                                 </p>
+                                i{" "}
                                 {(
                                   response.payload as ProofOfAddressFlashCheckResult
                                 ).document_address.street_1 && (
@@ -633,12 +766,16 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
         </div>
 
         <div className="preview-section">
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className="error-message" data-testid="error-message">
+              {error}
+            </div>
+          )}
 
           {loading && (
-            <div className="loading-overlay">
+            <div className="loading-overlay" data-testid="loading-spinner">
               <div className="loading-spinner"></div>
-              <p>Analyzing your document... This usually takes 5-10 seconds.</p>
+              <p>Processing document...</p>
             </div>
           )}
 

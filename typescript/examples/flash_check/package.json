@@ -4,7 +4,7 @@
   "publishConfig": {
     "access": "restricted"
   },
-  "version": "0.1.8",
+  "version": "0.1.16",
   "type": "module",
   "main": "./dist/docs-playground.umd.cjs",
   "module": "./dist/docs-playground.js",
@@ -18,7 +18,8 @@
       "require": "./dist/docs-playground.umd.cjs"
     },
     "./dist/style.css": "./dist/docs-playground.css",
-    "./style.css": "./dist/docs-playground.css"
+    "./style.css": "./dist/docs-playground.css",
+    "./docs-playground.css": "./dist/docs-playground.css"
   },
   "repository": {
     "type": "git",

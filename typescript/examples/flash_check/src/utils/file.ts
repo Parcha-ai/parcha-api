@@ -25,5 +25,12 @@ export const fileToBase64 = (file: File): Promise<string> => {
 };
 
 export const isValidPDF = (file: File): boolean => {
-  return file.type === "application/pdf";
+  console.log("Validating file:", {
+    name: file.name,
+    type: file.type,
+    size: file.size,
+  });
+  const result = file.type === "application/pdf";
+  console.log("File validation result:", result);
+  return result;
 };
