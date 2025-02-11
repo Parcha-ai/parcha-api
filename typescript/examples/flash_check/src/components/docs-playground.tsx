@@ -394,7 +394,9 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
       <div
         className={`main-content ${loading ? "loading" : ""} ${
-          document ? "has-document" : ""
+          document || initialResponse?.input_data?.document?.url
+            ? "has-document"
+            : ""
         }`}
         data-testid="main-content"
       >

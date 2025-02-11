@@ -501,7 +501,7 @@ describe("DocsPlayground Component", () => {
       },
     };
 
-    render(
+    const { container } = render(
       <DocsPlayground
         type="business_proof_of_address"
         apiKey="test-api-key"
@@ -509,6 +509,10 @@ describe("DocsPlayground Component", () => {
         initialResponse={mockResponseWithPdf}
       />
     );
+
+    // Verify the main content has the has-document class
+    const mainContent = container.querySelector(".main-content");
+    expect(mainContent).toHaveClass("has-document");
 
     // Wait for the PDF viewer to be rendered
     await waitFor(() => {
