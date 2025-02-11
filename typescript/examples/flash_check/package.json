@@ -4,7 +4,7 @@
   "publishConfig": {
     "access": "restricted"
   },
-  "version": "0.1.21",
+  "version": "0.1.22",
   "type": "module",
   "main": "./dist/docs-playground.umd.cjs",
   "module": "./dist/docs-playground.js",
@@ -31,7 +31,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "prepare": "echo 'Skipping build during install'",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest",
