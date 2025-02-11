@@ -4,7 +4,7 @@
   "publishConfig": {
     "access": "restricted"
   },
-  "version": "0.1.22",
+  "version": "0.1.23",
   "type": "module",
   "main": "./dist/docs-playground.umd.cjs",
   "module": "./dist/docs-playground.js",

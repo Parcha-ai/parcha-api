@@ -535,4 +535,67 @@ describe("DocsPlayground Component", () => {
     // Verify no error messages are shown
     expect(screen.queryByTestId("error-message")).not.toBeInTheDocument();
   });
+
+  it("disables document upload and removal in read-only mode", async () => {
+    // Create a mock response with a specific PDF URL
+    const mockResponseWithPdf = {
+      ...mockInitialResponse,
+      input_data: {
+        ...mockInitialResponse.input_data,
+        document: {
+          ...mockInitialResponse.input_data.document,
+          url: "https://storage.googleapis.com/test-bucket/test.pdf",
+          file_name: "test_document.pdf",
+        },
+      },
+    };
+
+    const { container } = render(
+      <DocsPlayground
+        type="business_proof_of_address"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+        initialResponse={mockResponseWithPdf}
+        playgroundMode={false}
+      />
+    );
+
+    // Verify the dropzone is disabled
+    const dropzone = container.querySelector(".dropzone");
+    expect(dropzone).toHaveClass("disabled");
+
+    // Verify the delete button is not present
+    const deleteButton = screen.queryByTitle("Remove document");
+    expect(deleteButton).not.toBeInTheDocument();
+
+    // Verify the code button is still present
+    const codeButton = screen.getByTitle("View API Request");
+    expect(codeButton).toBeInTheDocument();
+
+    // Click to open validation options
+    const validationButton = screen.getByRole("button", {
+      name: /validation options/i,
+    });
+    expect(validationButton).not.toBeDisabled(); // Should be enabled for opening/closing
+    await user.click(validationButton);
+
+    // Verify all options inside are disabled
+    const documentTypeCheckboxes = screen.getAllByRole("checkbox");
+    documentTypeCheckboxes.forEach((checkbox) => {
+      expect(checkbox).toBeDisabled();
+    });
+
+    const validityPeriodRadios = screen.getAllByRole("radio");
+    validityPeriodRadios.forEach((radio) => {
+      expect(radio).toBeDisabled();
+    });
+
+    // Verify the document info is still shown
+    const fileInfo = screen.getByText("📄 test_document.pdf");
+    expect(fileInfo).toBeInTheDocument();
+
+    // Verify the PDF viewer is still rendered
+    const pdfViewer = screen.getByTestId("mock-pdf-viewer");
+    expect(pdfViewer).toBeInTheDocument();
+  });
 });

@@ -49,6 +49,7 @@ export interface DocsPlaygroundProps {
   baseUrl?: string;
   agentKey?: string;
   initialResponse?: FlashLoaderResponse;
+  playgroundMode?: boolean;
 }
 
 export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
@@ -58,6 +59,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   baseUrl = import.meta.env.VITE_API_URL || DEFAULT_API_URL,
   agentKey = import.meta.env.VITE_AGENT_KEY,
   initialResponse,
+  playgroundMode = true,
 }) => {
   console.log("DocsPlayground rendering with props:", {
     type,
@@ -275,7 +277,10 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       "application/pdf": [".pdf"],
     },
     maxFiles: 1,
-    disabled: !isConfigured || loading,
+    disabled:
+      !isConfigured ||
+      loading ||
+      (!playgroundMode && !!(document || initialResponse)),
   });
 
   const getPdfUrl = (response: FlashLoaderResponse) => {
@@ -381,6 +386,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       data-response-id={response?.command_instance_id}
       data-has-response={!!response}
       data-type={type}
+      data-playground-mode={playgroundMode}
     >
       {renderDebugPanel()}
       {!isConfigured && (
@@ -425,25 +431,28 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                         <h3>Jurisdiction</h3>
                         <div className="jurisdiction-select">
                           <select
-                            value={selectedJurisdiction.state}
+                            value={`${selectedJurisdiction.state},${selectedJurisdiction.country}`}
                             onChange={(e) => {
+                              const [state, country] =
+                                e.target.value.split(",");
                               const jurisdiction = config.jurisdictions?.find(
-                                (j) => j.state === e.target.value
+                                (j) =>
+                                  j.state === state && j.country === country
                               );
-                              setSelectedJurisdiction(
-                                jurisdiction || {
-                                  label: "Any Jurisdiction",
-                                  state: "",
-                                  country: "",
-                                }
-                              );
+                              if (jurisdiction) {
+                                setSelectedJurisdiction(jurisdiction);
+                              }
                             }}
-                            disabled={loading}
+                            disabled={
+                              loading ||
+                              (!playgroundMode &&
+                                !!(document || initialResponse))
+                            }
                           >
-                            {config.jurisdictions?.map((jurisdiction) => (
+                            {config.jurisdictions.map((jurisdiction) => (
                               <option
-                                key={jurisdiction.state}
-                                value={jurisdiction.state}
+                                key={`${jurisdiction.state},${jurisdiction.country}`}
+                                value={`${jurisdiction.state},${jurisdiction.country}`}
                               >
                                 {jurisdiction.label}
                               </option>
@@ -487,7 +496,9 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                                 disabled={
                                   loading ||
                                   (acceptedTypes.size === 1 &&
-                                    acceptedTypes.has(type.value))
+                                    acceptedTypes.has(type.value)) ||
+                                  (!playgroundMode &&
+                                    !!(document || initialResponse))
                                 }
                                 data-testid={`checkbox-${type.value}`}
                               />
@@ -512,7 +523,11 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                                 name="validity"
                                 checked={validityPeriod.days === period.days}
                                 onChange={() => setValidityPeriod(period)}
-                                disabled={loading}
+                                disabled={
+                                  loading ||
+                                  (!playgroundMode &&
+                                    !!(document || initialResponse))
+                                }
                               />
                               <span>{period.label}</span>
                             </label>
@@ -530,7 +545,13 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                 {...getRootProps()}
                 className={`flex-1 dropzone ${isDragActive ? "active" : ""} ${
                   document ? "has-file" : ""
-                } ${!isConfigured || loading ? "disabled" : ""}`}
+                } ${
+                  !isConfigured ||
+                  loading ||
+                  (!playgroundMode && (document || initialResponse))
+                    ? "disabled"
+                    : ""
+                }`}
               >
                 <input {...getInputProps()} />
                 {document ? (
@@ -552,18 +573,24 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                           ? "Processing..."
                           : isDragActive
                           ? "Drop your document here"
+                          : !playgroundMode && (document || initialResponse)
+                          ? "Document loaded"
                           : "Upload your document"}
                       </p>
-                      {isConfigured && !loading && !isDragActive && (
-                        <p className="dropzone-subtitle">
-                          Drag & drop a PDF file here, or click to browse
-                        </p>
-                      )}
+                      {isConfigured &&
+                        !loading &&
+                        !isDragActive &&
+                        playgroundMode &&
+                        !(document || initialResponse) && (
+                          <p className="dropzone-subtitle">
+                            Drag & drop a PDF file here, or click to browse
+                          </p>
+                        )}
                     </div>
                   </div>
                 )}
               </div>
-              {document && (
+              {document && playgroundMode && (
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => setShowCodeModal(true)}
@@ -583,6 +610,18 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                     className="p-2 rounded-md hover:bg-red-100 text-red-600 transition-colors"
                   >
                     <DeleteOutlineIcon />
+                  </button>
+                </div>
+              )}
+              {document && !playgroundMode && (
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setShowCodeModal(true)}
+                    disabled={loading}
+                    title="View API Request"
+                    className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                  >
+                    <CodeIcon />
                   </button>
                 </div>
               )}
