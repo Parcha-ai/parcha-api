@@ -33,11 +33,22 @@ const DEFAULT_API_URL = "https://demo.parcha.ai/api/v1";
 const WORKER_URL =
   "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
 
+// Check if we're in development mode
+const isDevelopment = import.meta.env.DEV;
+
 const SAMPLE_DOCUMENTS: Record<FlashLoaderType, string> = {
-  incorporation: "/parcha-inc.pdf",
-  business_proof_of_address: "/parcha-poa.pdf",
-  individual_proof_of_address: "/customer-poai.pdf",
-  ein: "/parcha_ein.pdf",
+  incorporation: isDevelopment
+    ? "/parcha-inc.pdf"
+    : "@parcha/docs-playground/sample-docs/parcha-inc.pdf",
+  business_proof_of_address: isDevelopment
+    ? "/parcha-poa.pdf"
+    : "@parcha/docs-playground/sample-docs/parcha-poa.pdf",
+  individual_proof_of_address: isDevelopment
+    ? "/customer-poai.pdf"
+    : "@parcha/docs-playground/sample-docs/customer-poai.pdf",
+  ein: isDevelopment
+    ? "/parcha_ein.pdf"
+    : "@parcha/docs-playground/sample-docs/parcha_ein.pdf",
 };
 
 const formatDate = (dateString: string | null) => {
