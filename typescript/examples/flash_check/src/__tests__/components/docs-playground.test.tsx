@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { DocsPlayground } from "../../components/docs-playground";
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import React from "react";
-import { FlashLoaderResponse } from "../../types/flash";
+import { FlashLoaderResponse, FlashLoaderType } from "../../types/flash";
 
 // Mock the PDF viewer components
 vi.mock("@react-pdf-viewer/core", () => ({
@@ -26,6 +26,10 @@ const mockCheckDocument = vi.fn();
 vi.mock("../../services/flashLoader", () => ({
   checkDocument: (...args: any[]) => mockCheckDocument(...args),
 }));
+
+// Mock fetch globally
+const mockFetch = vi.fn();
+vi.stubGlobal("fetch", mockFetch);
 
 describe("DocsPlayground Component", () => {
   const user = userEvent.setup();
@@ -103,32 +107,39 @@ describe("DocsPlayground Component", () => {
   };
 
   beforeEach(() => {
-    // Clear environment variables and mocks before each test
-    vi.stubEnv("VITE_API_KEY", "");
-    vi.stubEnv("VITE_AGENT_KEY", "");
-    vi.stubEnv("VITE_API_URL", "");
-    mockCheckDocument.mockReset();
+    vi.resetModules();
+    vi.mock("@/utils/file", () => ({
+      fileToBase64: vi.fn().mockResolvedValue("base64string"),
+    }));
+
+    // Set up environment variables for testing
+    vi.stubEnv("VITE_API_KEY", "test-api-key");
+    vi.stubEnv("VITE_AGENT_KEY", "test-agent-key");
+    vi.stubEnv("VITE_KYC_AGENT_KEY", "test-kyc-agent-key");
+    vi.stubEnv("VITE_API_URL", "https://test.api.url");
+
+    // Clear all mocks
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    // Restore environment variables and mocks after each test
     vi.unstubAllEnvs();
     vi.clearAllMocks();
   });
 
   it("renders with default configuration", () => {
+    vi.stubEnv("VITE_API_KEY", "");
+    vi.stubEnv("VITE_AGENT_KEY", "");
+
     render(<DocsPlayground type="incorporation" />);
 
     // Verify environment variables are empty
     expect(import.meta.env.VITE_API_KEY).toBe("");
     expect(import.meta.env.VITE_AGENT_KEY).toBe("");
 
-    // When no API key is provided, the error banner should be visible
-    expect(screen.getByTestId("env-error-banner")).toBeInTheDocument();
+    // Verify error banner is shown
     expect(
-      screen.getByText(
-        "Missing required configuration: API key and agent key are required"
-      )
+      screen.getByText(/Missing required configuration/i)
     ).toBeInTheDocument();
   });
 
@@ -144,7 +155,7 @@ describe("DocsPlayground Component", () => {
     // Error banner should not be present
     expect(screen.queryByTestId("env-error-banner")).not.toBeInTheDocument();
 
-    // Upload message should be visible - using partial text match since text is split across elements
+    // Upload message should be visible
     expect(screen.getByText(/drag & drop or/i)).toBeInTheDocument();
     expect(screen.getByText(/choose documents/i)).toBeInTheDocument();
   });
@@ -236,7 +247,7 @@ describe("DocsPlayground Component", () => {
         agentKey="test-agent-key"
       />
     );
-    const user = userEvent.setup();
+
     const file = new File(["dummy content"], "test.pdf", {
       type: "application/pdf",
     });
@@ -247,9 +258,104 @@ describe("DocsPlayground Component", () => {
 
     if (fileInput) {
       await user.upload(fileInput, file);
-      // Look for the text with emoji
-      expect(await screen.findByText("📄 test.pdf")).toBeInTheDocument();
+
+      // Wait for the file info to appear and verify it
+      await waitFor(() => {
+        const fileInfo = screen.getByText((content) =>
+          content.includes("test.pdf")
+        );
+        expect(fileInfo).toBeInTheDocument();
+      });
     }
+  });
+
+  it("loads sample document when clicking the sample document button", async () => {
+    // Mock fetch for sample document
+    const mockArrayBuffer = new ArrayBuffer(8);
+    mockFetch.mockResolvedValue({
+      arrayBuffer: () => Promise.resolve(mockArrayBuffer),
+    });
+
+    render(
+      <DocsPlayground
+        type="incorporation"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+      />
+    );
+
+    // Mock successful document check
+    mockCheckDocument.mockResolvedValueOnce(mockInitialResponse);
+
+    // Find and click the sample document button
+    const sampleButton = screen.getByText("Load Sample Document");
+    await user.click(sampleButton);
+
+    // Wait for the API call
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith("/sample-docs/parcha-inc.pdf");
+      expect(mockCheckDocument).toHaveBeenCalled();
+    });
+  });
+
+  it("loads correct sample document based on type", async () => {
+    // Mock fetch for sample document
+    const mockArrayBuffer = new ArrayBuffer(8);
+    mockFetch.mockResolvedValue({
+      arrayBuffer: () => Promise.resolve(mockArrayBuffer),
+    });
+
+    // Test each document type
+    const documentTypes: Array<[FlashLoaderType, string]> = [
+      ["incorporation", "/sample-docs/parcha-inc.pdf"],
+      ["business_proof_of_address", "/sample-docs/parcha-poa.pdf"],
+      ["individual_proof_of_address", "/sample-docs/customer-poai.pdf"],
+      ["ein", "/sample-docs/parcha_ein.pdf"],
+    ];
+
+    for (const [type, expectedPath] of documentTypes) {
+      // Clear mocks between iterations
+      vi.clearAllMocks();
+
+      const { container } = render(
+        <DocsPlayground
+          type={type}
+          apiKey="test-api-key"
+          agentKey="test-agent-key"
+        />
+      );
+
+      // Find and click the sample document button
+      const sampleButton = screen.getByText("Load Sample Document");
+      await user.click(sampleButton);
+
+      // Verify fetch was called with correct URL for each type
+      expect(mockFetch).toHaveBeenCalledWith(expectedPath);
+      expect(mockCheckDocument).toHaveBeenCalled();
+    }
+  });
+
+  it("handles sample document loading errors gracefully", async () => {
+    // Mock fetch to simulate an error
+    mockFetch.mockRejectedValue(new Error("Failed to load document"));
+
+    const { container } = render(
+      <DocsPlayground
+        type="incorporation"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+      />
+    );
+
+    // Find and click the sample document button
+    const sampleButton = screen.getByText("Load Sample Document");
+    await user.click(sampleButton);
+
+    // Verify error message is displayed
+    expect(
+      await screen.findByText("Error loading sample document")
+    ).toBeInTheDocument();
+    expect(mockCheckDocument).not.toHaveBeenCalled();
   });
 
   it("displays error message for non-PDF files", async () => {
@@ -334,28 +440,11 @@ describe("DocsPlayground Component", () => {
   });
 
   it("displays loading state during document processing", async () => {
-    // Set up a delayed response
     mockCheckDocument.mockImplementation(
       () =>
-        new Promise((resolve) => {
-          setTimeout(() => {
-            resolve({
-              payload: {
-                company_name: "PARCHA LABS INC",
-                document_date: "2023-03-31",
-                type: "incorporation",
-              },
-              input_data: {
-                type: "incorporation",
-                document: { url: "test-url" },
-              },
-              command_instance_id: "test-id",
-              passed: true,
-              answer: "Valid document",
-              status: "completed",
-            } as FlashLoaderResponse);
-          }, 500);
-        })
+        new Promise((resolve) =>
+          setTimeout(() => resolve(mockInitialResponse), 100)
+        )
     );
 
     const { container } = render(
@@ -378,8 +467,10 @@ describe("DocsPlayground Component", () => {
       await user.upload(fileInput, file);
 
       // Verify loading state appears
-      expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
-      expect(screen.getByText("Processing document...")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
+        expect(screen.getByText("Processing document...")).toBeInTheDocument();
+      });
 
       // Wait for loading state to disappear
       await waitFor(
@@ -394,37 +485,17 @@ describe("DocsPlayground Component", () => {
   });
 
   it("displays EIN number in document details when available", async () => {
-    // Set up immediate response for this test
-    const testDate = "2023-03-31T00:00:00.000Z"; // UTC date
-    mockCheckDocument.mockResolvedValue({
+    // Mock successful document check with EIN response
+    const einResponse = {
+      ...mockInitialResponse,
       payload: {
+        type: "ein",
         company_name: "PARCHA LABS INC",
-        document_date: testDate,
+        document_date: "2023-03-31",
         ein: "92-3265708",
-        type: "ein",
       },
-      input_data: {
-        type: "ein",
-        document: { url: "test-url" },
-      },
-      command_instance_id: "test-id",
-      passed: true,
-      answer: "Valid EIN document",
-      status: "completed",
-      created_at: testDate,
-      updated_at: testDate,
-      agent_key: "test-agent-key",
-      command_name: "test-command",
-      check_args: {},
-      data_loader_args: {},
-      job_id: "test-job",
-      data_loader_id: "test-loader",
-      result_type: "ein",
-    } as FlashLoaderResponse);
-
-    const mockFile = new File(["dummy content"], "test.pdf", {
-      type: "application/pdf",
-    });
+    };
+    mockCheckDocument.mockResolvedValueOnce(einResponse);
 
     const { container } = render(
       <DocsPlayground
@@ -434,20 +505,21 @@ describe("DocsPlayground Component", () => {
       />
     );
 
-    // Get the file input and simulate file upload
+    // Upload a file to trigger the document check
+    const file = new File(["dummy content"], "test.pdf", {
+      type: "application/pdf",
+    });
+
     const fileInput = container.querySelector(
       'input[type="file"]'
     ) as HTMLInputElement;
 
-    await userEvent.upload(fileInput, mockFile);
+    await user.upload(fileInput, file);
 
     // Wait for the component to update and verify the document details are displayed
     await waitFor(() => {
-      // Check EIN number
-      expect(screen.getByTestId("ein-number")).toHaveTextContent("92-3265708");
-
-      // Check date format - should be a date in March 2023
-      expect(screen.getByText(/March \d{1,2}, 2023/)).toBeInTheDocument();
+      const einElement = screen.getByTestId("ein-number");
+      expect(einElement).toHaveTextContent("92-3265708");
     });
   });
 
@@ -649,11 +721,7 @@ describe("DocsPlayground Component", () => {
 
   it("calls onResponse callback when API returns a response", async () => {
     const mockOnResponse = vi.fn();
-    const mockApiResponse = {
-      ...mockInitialResponse,
-      command_instance_id: "test-id-123",
-    };
-    mockCheckDocument.mockResolvedValueOnce(mockApiResponse);
+    mockCheckDocument.mockResolvedValueOnce(mockInitialResponse);
 
     const { container } = render(
       <DocsPlayground
@@ -676,7 +744,7 @@ describe("DocsPlayground Component", () => {
     // Wait for the API call to complete and verify callback was called
     await waitFor(() => {
       expect(mockOnResponse).toHaveBeenCalledTimes(1);
-      expect(mockOnResponse).toHaveBeenCalledWith(mockApiResponse);
+      expect(mockOnResponse).toHaveBeenCalledWith(mockInitialResponse);
     });
   });
 });

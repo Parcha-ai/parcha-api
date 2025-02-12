@@ -22,6 +22,7 @@ import {
   IncorporationFlashCheckResult,
   ProofOfAddressFlashCheckResult,
   EinFlashCheckResult,
+  KYCProofOfAddressFlashCheckResult,
 } from "../types/flash";
 import { fileToBase64, isValidPDF } from "../utils/file";
 import { checkDocument } from "../services/flashLoader";
@@ -31,6 +32,13 @@ import "./docs-playground.css";
 const DEFAULT_API_URL = "https://demo.parcha.ai/api/v1";
 const WORKER_URL =
   "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+
+const SAMPLE_DOCUMENTS: Record<FlashLoaderType, string> = {
+  incorporation: "/parcha-inc.pdf",
+  business_proof_of_address: "/parcha-poa.pdf",
+  individual_proof_of_address: "/customer-poai.pdf",
+  ein: "/parcha_ein.pdf",
+};
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return null;
@@ -58,7 +66,9 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   descope_user_id,
   apiKey = import.meta.env.VITE_API_KEY,
   baseUrl = import.meta.env.VITE_API_URL || DEFAULT_API_URL,
-  agentKey = import.meta.env.VITE_AGENT_KEY,
+  agentKey = type === "individual_proof_of_address"
+    ? import.meta.env.VITE_KYC_AGENT_KEY
+    : import.meta.env.VITE_AGENT_KEY,
   initialResponse,
   playgroundMode = true,
   showDebugPanel = false,
@@ -86,7 +96,12 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   const [einNumber, setEinNumber] = useState<string>("");
 
   const effectiveBaseUrl = `${baseUrl}/runFlashCheck`;
-  const isConfigured = !!(apiKey && agentKey);
+  const isConfigured = !!(
+    apiKey &&
+    (type === "individual_proof_of_address"
+      ? import.meta.env.VITE_KYC_AGENT_KEY
+      : import.meta.env.VITE_AGENT_KEY)
+  );
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
   // Add debug info
@@ -211,7 +226,8 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           config.checkId,
           config.documentField,
           descope_user_id,
-          kybSchema
+          kybSchema,
+          type
         );
 
         const endTime = Date.now();
@@ -377,6 +393,64 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
     });
   };
 
+  const loadSampleDocument = useCallback(async () => {
+    try {
+      log.info("loading_sample_document", {
+        type,
+        url: SAMPLE_DOCUMENTS[type],
+      });
+      const response = await fetch(SAMPLE_DOCUMENTS[type]);
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch sample document: ${response.statusText}`
+        );
+      }
+
+      const contentType = response.headers.get("content-type");
+      log.info("sample_document_response", {
+        contentType,
+        status: response.status,
+      });
+
+      if (!contentType?.includes("application/pdf")) {
+        log.error(
+          "invalid_content_type",
+          new Error(`Expected PDF but got ${contentType}`)
+        );
+        setError("Error: Sample document not found or invalid format");
+        return;
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      log.info("sample_document_size", { size: arrayBuffer.byteLength });
+
+      const file = new File(
+        [arrayBuffer],
+        SAMPLE_DOCUMENTS[type].split("/").pop() || "sample.pdf",
+        { type: "application/pdf" }
+      );
+
+      if (!isValidPDF(file)) {
+        setError("Invalid PDF file");
+        return;
+      }
+
+      const base64 = await fileToBase64(file);
+      log.info("sample_document_base64", { length: base64.length });
+
+      const newDoc = { file, base64 };
+      setDocument(newDoc);
+      setError(null);
+      await checkDocumentWithApi(newDoc);
+    } catch (err) {
+      log.error("sample_document_error", err as Error);
+      setError(
+        "Error loading sample document. Please try uploading a file manually."
+      );
+    }
+  }, [type, checkDocumentWithApi]);
+
   return (
     <div
       key={`${type}-${initialResponse?.command_instance_id || "new"}`}
@@ -391,7 +465,13 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
         <div className="env-error-banner" data-testid="env-error-banner">
           <span>⚠️</span>
           <p>
-            Missing required configuration: API key and agent key are required
+            Missing required configuration: {!apiKey && "API key"}
+            {!apiKey && !agentKey && " and "}
+            {!agentKey &&
+              (type === "individual_proof_of_address"
+                ? "KYC agent key"
+                : "agent key")}{" "}
+            are required
           </p>
         </div>
       )}
@@ -543,89 +623,111 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
               </div>
             )}
 
-            <div className="flex gap-4">
-              <div
-                {...getRootProps()}
-                className={`flex-1 dropzone border-none rounded-xl ${
-                  isDragActive ? "active" : ""
-                } ${document ? "has-file" : ""} ${
-                  !isConfigured ||
-                  loading ||
-                  (!playgroundMode && (document || initialResponse))
-                    ? "disabled"
-                    : ""
-                }`}
-              >
-                <input {...getInputProps()} />
-                {document ? (
-                  <div className="file-info">
-                    <p>📄 {document.file.name}</p>
-                  </div>
-                ) : (
-                  <div className="dropzone-content border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center">
-                    <div className="dropzone-text flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#6366f1"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                        <line x1="12" y1="18" x2="12" y2="12" />
-                        <line x1="9" y1="15" x2="15" y2="15" />
-                      </svg>
-                      <p className="dropzone-title">
-                        Drag & drop or{" "}
-                        <span style={{ color: "#6366f1", cursor: "pointer" }}>
-                          choose documents
-                        </span>{" "}
-                        to upload
-                      </p>
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Upload Document
+                </h3>
+                <button
+                  onClick={loadSampleDocument}
+                  className="text-xs text-indigo-600 hover:text-indigo-900 font-medium"
+                  disabled={
+                    loading ||
+                    (!playgroundMode && !!(document || initialResponse))
+                  }
+                >
+                  Load Sample Document
+                </button>
+              </div>
+
+              <div className="flex gap-4">
+                <div
+                  {...getRootProps()}
+                  className={`flex-1 dropzone border-none rounded-xl ${
+                    isDragActive ? "active" : ""
+                  } ${document ? "has-file" : ""} ${
+                    !isConfigured ||
+                    loading ||
+                    (!playgroundMode && (document || initialResponse))
+                      ? "disabled"
+                      : ""
+                  }`}
+                >
+                  <input {...getInputProps()} />
+                  {document ? (
+                    <div className="file-info">
+                      <p>📄 {document.file.name}</p>
                     </div>
+                  ) : (
+                    <div className="dropzone-content border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center">
+                      <div className="dropzone-text flex flex-col items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#6366f1"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="12" y1="18" x2="12" y2="12" />
+                            <line x1="9" y1="15" x2="15" y2="15" />
+                          </svg>
+                          <p className="dropzone-title">
+                            Drag & drop or{" "}
+                            <span
+                              style={{ color: "#6366f1", cursor: "pointer" }}
+                            >
+                              choose documents
+                            </span>{" "}
+                            to upload
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {document && playgroundMode && (
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => setShowCodeModal(true)}
+                      disabled={loading}
+                      title="View API Request"
+                      className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                    >
+                      <CodeIcon />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDocument(null);
+                        setResponse(null);
+                      }}
+                      disabled={loading}
+                      title="Remove document"
+                      className="p-2 rounded-md hover:bg-red-100 text-red-600 transition-colors"
+                    >
+                      <DeleteOutlineIcon />
+                    </button>
+                  </div>
+                )}
+                {document && !playgroundMode && (
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => setShowCodeModal(true)}
+                      disabled={loading}
+                      title="View API Request"
+                      className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                    >
+                      <CodeIcon />
+                    </button>
                   </div>
                 )}
               </div>
-              {document && playgroundMode && (
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => setShowCodeModal(true)}
-                    disabled={loading}
-                    title="View API Request"
-                    className="p-2 rounded-md hover:bg-gray-100 transition-colors"
-                  >
-                    <CodeIcon />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDocument(null);
-                      setResponse(null);
-                    }}
-                    disabled={loading}
-                    title="Remove document"
-                    className="p-2 rounded-md hover:bg-red-100 text-red-600 transition-colors"
-                  >
-                    <DeleteOutlineIcon />
-                  </button>
-                </div>
-              )}
-              {document && !playgroundMode && (
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => setShowCodeModal(true)}
-                    disabled={loading}
-                    title="View API Request"
-                    className="p-2 rounded-md hover:bg-gray-100 transition-colors"
-                  >
-                    <CodeIcon />
-                  </button>
-                </div>
-              )}
             </div>
           </div>
 
@@ -683,7 +785,8 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                       <>
                         <p>
                           <strong>Company Name: </strong>
-                          {response.payload.company_name || "Not available"}
+                          {(response.payload as IncorporationFlashCheckResult)
+                            .company_name || "Not available"}
                         </p>
                         <p>
                           <strong>Jurisdiction: </strong>
@@ -700,7 +803,8 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                       <>
                         <p>
                           <strong>Company Name: </strong>
-                          {response.payload.company_name || "Not available"}
+                          {(response.payload as EinFlashCheckResult)
+                            .company_name || "Not available"}
                         </p>
                         <p>
                           <strong>Document Date: </strong>
@@ -713,11 +817,99 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                             "Not available"}
                         </p>
                       </>
+                    ) : type === "individual_proof_of_address" ? (
+                      <>
+                        <p>
+                          <strong>Individual Name: </strong>
+                          {(
+                            response.payload as KYCProofOfAddressFlashCheckResult
+                          ).individual_name || "Not available"}
+                        </p>
+                        <p>
+                          <strong>Document Type: </strong>
+                          {(
+                            response.payload as KYCProofOfAddressFlashCheckResult
+                          ).document_type || "Not available"}
+                        </p>
+                        <p>
+                          <strong>Document Date: </strong>
+                          {formatDate(response.payload.document_date) ||
+                            "Not available"}
+                        </p>
+
+                        {(response.payload as KYCProofOfAddressFlashCheckResult)
+                          .document_address && (
+                          <div className="address-details">
+                            <p>
+                              <strong>Address</strong>
+                            </p>
+                            {(
+                              response.payload as KYCProofOfAddressFlashCheckResult
+                            ).document_address.street_1 && (
+                              <p>
+                                {
+                                  (
+                                    response.payload as KYCProofOfAddressFlashCheckResult
+                                  ).document_address.street_1
+                                }
+                              </p>
+                            )}
+                            {(
+                              response.payload as KYCProofOfAddressFlashCheckResult
+                            ).document_address.street_2 && (
+                              <p>
+                                {
+                                  (
+                                    response.payload as KYCProofOfAddressFlashCheckResult
+                                  ).document_address.street_2
+                                }
+                              </p>
+                            )}
+                            {((
+                              response.payload as KYCProofOfAddressFlashCheckResult
+                            ).document_address.city ||
+                              (
+                                response.payload as KYCProofOfAddressFlashCheckResult
+                              ).document_address.state ||
+                              (
+                                response.payload as KYCProofOfAddressFlashCheckResult
+                              ).document_address.postal_code) && (
+                              <p>
+                                {[
+                                  (
+                                    response.payload as KYCProofOfAddressFlashCheckResult
+                                  ).document_address.city,
+                                  (
+                                    response.payload as KYCProofOfAddressFlashCheckResult
+                                  ).document_address.state,
+                                  (
+                                    response.payload as KYCProofOfAddressFlashCheckResult
+                                  ).document_address.postal_code,
+                                ]
+                                  .filter(Boolean)
+                                  .join(", ")}
+                              </p>
+                            )}
+                            {(
+                              response.payload as KYCProofOfAddressFlashCheckResult
+                            ).document_address.country_code && (
+                              <p>
+                                {
+                                  (
+                                    response.payload as KYCProofOfAddressFlashCheckResult
+                                  ).document_address.country_code
+                                }
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <>
                         <p>
                           <strong>Company: </strong>
-                          {response.payload.company_name || "Not available"}
+                          {(response.payload as ProofOfAddressFlashCheckResult)
+                            .company_name || "Not available"}
                         </p>
                         {response.payload.type ===
                           "ProofOfAddressFlashCheckResult" && (

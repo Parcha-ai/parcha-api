@@ -1,9 +1,28 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { resolve } from "path";
+import fs from "fs-extra";
+
+// Custom plugin to copy sample documents
+const copyPublicFiles = () => ({
+  name: "copy-public-files",
+  buildEnd: async () => {
+    // Create sample-docs directory in dist
+    await fs.ensureDir("dist/sample-docs");
+
+    // Copy PDF files from public to dist/sample-docs
+    const files = await fs.readdir("public");
+    for (const file of files) {
+      if (file.endsWith(".pdf")) {
+        await fs.copy(`public/${file}`, `dist/sample-docs/${file}`);
+      }
+    }
+  },
+});
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), copyPublicFiles()],
   css: {
     postcss: "./postcss.config.js",
     modules: {

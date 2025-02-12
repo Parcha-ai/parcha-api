@@ -19,6 +19,7 @@ export interface FlashContextType {
 export type FlashLoaderType =
   | "incorporation"
   | "business_proof_of_address"
+  | "individual_proof_of_address"
   | "ein";
 
 export interface FlashLoaderConfig {
@@ -135,6 +136,17 @@ export const FLASH_LOADER_CONFIGS: Record<FlashLoaderType, FlashLoaderConfig> =
       documentTypes: DOCUMENT_TYPES,
       showValidityPeriod: true,
     },
+    individual_proof_of_address: {
+      type: "individual_proof_of_address",
+      checkId: "kyc.proof_of_address_verification",
+      documentField: "proof_of_address_documents",
+      checkArgs: {
+        validity_period: 90,
+        accepted_documents: DOCUMENT_TYPES.map((dt) => dt.value),
+      },
+      documentTypes: DOCUMENT_TYPES,
+      showValidityPeriod: true,
+    },
     incorporation: {
       type: "incorporation",
       checkId: "kyb.incorporation_document_verification",
@@ -206,6 +218,14 @@ export interface EinFlashCheckResult {
   ein: string;
 }
 
+export interface KYCProofOfAddressFlashCheckResult {
+  type: string;
+  individual_name: string;
+  document_date: string;
+  document_type: string;
+  document_address: Address;
+}
+
 export interface FlashLoaderResponse {
   agent_instance_id: string;
   error: string | null;
@@ -224,7 +244,8 @@ export interface FlashLoaderResponse {
   payload:
     | ProofOfAddressFlashCheckResult
     | IncorporationFlashCheckResult
-    | EinFlashCheckResult;
+    | EinFlashCheckResult
+    | KYCProofOfAddressFlashCheckResult;
   status: string;
   data_loader_args: Record<string, unknown>;
   job_id: string;

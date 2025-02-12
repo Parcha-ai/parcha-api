@@ -23,6 +23,16 @@ function App() {
               Business Proof of Address
             </button>
             <button
+              onClick={() => setSelectedTab("individual_proof_of_address")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                selectedTab === "individual_proof_of_address"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:text-gray-800"
+              }`}
+            >
+              Individual Proof of Address
+            </button>
+            <button
               onClick={() => setSelectedTab("incorporation")}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 selectedTab === "incorporation"

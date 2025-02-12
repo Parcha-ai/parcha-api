@@ -1,4 +1,4 @@
-import { FlashLoaderResponse } from "../types/flash";
+import { FlashLoaderResponse, FlashLoaderType } from "../types/flash";
 
 export interface Config {
   apiKey: string;
@@ -14,7 +14,8 @@ export const checkDocument = async (
   checkId: string,
   documentField: string,
   descope_user_id?: string,
-  kybSchema?: Record<string, any>
+  kybSchema?: Record<string, any>,
+  type?: FlashLoaderType
 ): Promise<FlashLoaderResponse> => {
   const response = await fetch(`${config.baseUrl}`, {
     method: "POST",
@@ -26,20 +27,39 @@ export const checkDocument = async (
       agent_key: config.agentKey,
       check_id: checkId,
       check_args: checkArgs,
-      kyb_schema: kybSchema || {
-        id: "parcha-latest",
-        self_attested_data: {
-          business_name: "Parcha",
-          registered_business_name: "Parcha Labs Inc",
-          [documentField]: [
-            {
-              b64_document: document,
-              file_name: filename,
-              source_type: "file_url",
+      ...(type === "individual_proof_of_address"
+        ? {
+            kyc_schema: {
+              id: "parcha-latest",
+              self_attested_data: {
+                first_name: "Miguel",
+                last_name: "Rios",
+                [documentField]: [
+                  {
+                    b64_document: document,
+                    file_name: filename,
+                    source_type: "file_url",
+                  },
+                ],
+              },
             },
-          ],
-        },
-      },
+          }
+        : {
+            kyb_schema: kybSchema || {
+              id: "parcha-latest",
+              self_attested_data: {
+                business_name: "Parcha",
+                registered_business_name: "Parcha Labs Inc",
+                [documentField]: [
+                  {
+                    b64_document: document,
+                    file_name: filename,
+                    source_type: "file_url",
+                  },
+                ],
+              },
+            },
+          }),
       ...(descope_user_id ? { descope_user_id } : {}),
     }),
   });
