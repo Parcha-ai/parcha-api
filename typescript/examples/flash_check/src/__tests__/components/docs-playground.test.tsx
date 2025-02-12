@@ -317,7 +317,7 @@ describe("DocsPlayground Component", () => {
       // Clear mocks between iterations
       vi.clearAllMocks();
 
-      const { container } = render(
+      render(
         <DocsPlayground
           type={type}
           apiKey="test-api-key"
@@ -339,7 +339,7 @@ describe("DocsPlayground Component", () => {
     // Mock fetch to simulate an error
     mockFetch.mockRejectedValue(new Error("Failed to load document"));
 
-    const { container } = render(
+    render(
       <DocsPlayground
         type="incorporation"
         apiKey="test-api-key"
