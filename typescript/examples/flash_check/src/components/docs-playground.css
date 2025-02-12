@@ -1,7 +1,7 @@
 .docs-playground {
   width: 100%;
   height: 100vh;
-  background-color: #f8f9fa;
+  background-color: #ffffff;
   display: grid;
   grid-template-rows: auto 1fr;
 }
@@ -398,12 +398,11 @@
 }
 
 .document-types-accordion {
+  background: #F9FAFB;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 0;
   overflow: hidden;
-  background: white;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .document-types-accordion:hover {
@@ -413,35 +412,33 @@
 .accordion-toggle {
   width: 100%;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  font-size: 0.9375rem;
-  color: #1f2937;
-  font-weight: 500;
+  gap: 8px;
+  padding: 16px;
+  background: transparent;
+  border: none;
   cursor: pointer;
+  font-size: 14px;
+  color: #111827;
+  font-weight: 500;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.accordion-toggle svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #6B7280;
 }
 
 .accordion-toggle:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #6366f1;
-}
-
-.accordion-toggle:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background: #f9fafb;
+  background-color: #f9fafb;
 }
 
 .document-types {
-  padding: 1.5rem;
+  padding: 16px;
   border-top: 1px solid #e5e7eb;
-  background: #f8fafc;
+  background-color: #ffffff;
 }
 
 .document-types h3 {
@@ -519,54 +516,75 @@
 }
 
 .dropzone {
-  border: 2px dashed #e5e7eb;
-  padding: 1.5rem;
+  background: #F9FAFB;
+  border: 2px dashed #E5E7EB;
+  border-radius: 0;
+  padding: 24px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  min-height: 80px;
+  transition: all 0.2s ease;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 100px;
   position: relative;
-  overflow: hidden;
 }
 
-.dropzone.active {
-  border-color: #6366f1;
-  background: #f5f7ff;
+
+
+.dropzone::before {
+  top: -2px;
+  left: -2px;
+  border-top: 2px solid #E5E7EB;
+  border-left: 2px solid #E5E7EB;
 }
 
-.dropzone.has-file {
-  border-style: solid;
-  background: white;
+.dropzone::after {
+  top: -2px;
+  right: -2px;
+  border-top: 2px solid #E5E7EB;
+  border-right: 2px solid #E5E7EB;
 }
 
-.dropzone.disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+.dropzone .dropzone-content::before {
+  bottom: -2px;
+  left: -2px;
+  border-bottom: 2px solid #E5E7EB;
+  border-left: 2px solid #E5E7EB;
+}
+
+.dropzone .dropzone-content::after {
+  bottom: -2px;
+  right: -2px;
+  border-bottom: 2px solid #E5E7EB;
+  border-right: 2px solid #E5E7EB;
 }
 
 .dropzone-content {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
-}
-
-.dropzone-text {
-  text-align: left;
+  width: 100%;
+  height: 100%;
+  position: relative;
 }
 
 .dropzone-title {
-  font-weight: 500;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
+  font-size: 16px;
+  font-weight: 400;
+  color: #111827;
+  margin: 0;
 }
 
 .dropzone-subtitle {
-  color: #6b7280;
-  font-size: 0.875rem;
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0;
+}
+
+.dropzone-icon {
+  margin-bottom: 8px;
 }
 
 .file-info {
@@ -861,4 +879,10 @@
 .jurisdiction-select select:disabled {
   background-color: #f3f4f6;
   cursor: not-allowed;
+}
+
+.dropzone:hover:not(.disabled),
+.dropzone.active {
+  border-color: #E5E7EB;
+  background-color: #F9FAFB;
 } 

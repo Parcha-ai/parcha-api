@@ -3,7 +3,6 @@ import { useDropzone } from "react-dropzone";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import {
-  Upload as UploadFileIcon,
   Code as CodeIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   KeyboardArrowRight as KeyboardArrowRightIcon,
@@ -51,6 +50,7 @@ export interface DocsPlaygroundProps {
   initialResponse?: FlashLoaderResponse;
   playgroundMode?: boolean;
   showDebugPanel?: boolean;
+  onResponse?: (response: FlashLoaderResponse) => void;
 }
 
 export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
@@ -62,6 +62,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   initialResponse,
   playgroundMode = true,
   showDebugPanel = false,
+  onResponse,
 }) => {
   const config = useMemo(() => FLASH_LOADER_CONFIGS[type], [type]);
   const [document, setDocument] = useState<DocumentFile | null>(null);
@@ -220,6 +221,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           full_response: result,
         });
         setResponse(result);
+        onResponse?.(result);
       } catch (err) {
         setError((err as Error).message);
         setTimeSpent(null);
@@ -239,6 +241,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       descope_user_id,
       type,
       einNumber,
+      onResponse,
     ]
   );
 
@@ -402,21 +405,26 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
         data-testid="main-content"
       >
         <div className="upload-section">
-          <div className="controls-panel">
+          <div className="controls-panel border-none">
             {(config.documentTypes ||
               config.showValidityPeriod ||
               config.jurisdictions) && (
-              <div className="document-types-accordion">
+              <div className="document-types-accordion rounded-xl">
                 <button
-                  className="accordion-toggle"
+                  className="accordion-toggle text-lg"
                   onClick={() => setShowDocumentTypes(!showDocumentTypes)}
                   disabled={loading}
                 >
-                  <span>Validation Options</span>
                   {showDocumentTypes ? (
-                    <KeyboardArrowDownIcon />
+                    <>
+                      <KeyboardArrowDownIcon className="text-lg" />
+                      <span className="text-lg">Hide Validation Options</span>
+                    </>
                   ) : (
-                    <KeyboardArrowRightIcon />
+                    <>
+                      <KeyboardArrowRightIcon className="text-lg" />
+                      <span className="text-lg">View Validation Options</span>
+                    </>
                   )}
                 </button>
                 {showDocumentTypes && (
@@ -538,9 +546,9 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
             <div className="flex gap-4">
               <div
                 {...getRootProps()}
-                className={`flex-1 dropzone ${isDragActive ? "active" : ""} ${
-                  document ? "has-file" : ""
-                } ${
+                className={`flex-1 dropzone border-none rounded-xl ${
+                  isDragActive ? "active" : ""
+                } ${document ? "has-file" : ""} ${
                   !isConfigured ||
                   loading ||
                   (!playgroundMode && (document || initialResponse))
@@ -554,33 +562,31 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                     <p>📄 {document.file.name}</p>
                   </div>
                 ) : (
-                  <div className="dropzone-content">
-                    <div className="dropzone-icon">
-                      <UploadFileIcon
-                        style={{ fontSize: "2.5rem", color: "#6366f1" }}
-                      />
-                    </div>
-                    <div className="dropzone-text">
+                  <div className="dropzone-content border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center">
+                    <div className="dropzone-text flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#6366f1"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="12" y1="18" x2="12" y2="12" />
+                        <line x1="9" y1="15" x2="15" y2="15" />
+                      </svg>
                       <p className="dropzone-title">
-                        {!isConfigured
-                          ? "Configure environment variables to start"
-                          : loading
-                          ? "Processing..."
-                          : isDragActive
-                          ? "Drop your document here"
-                          : !playgroundMode && (document || initialResponse)
-                          ? "Document loaded"
-                          : "Upload your document"}
+                        Drag & drop or{" "}
+                        <span style={{ color: "#6366f1", cursor: "pointer" }}>
+                          choose documents
+                        </span>{" "}
+                        to upload
                       </p>
-                      {isConfigured &&
-                        !loading &&
-                        !isDragActive &&
-                        playgroundMode &&
-                        !(document || initialResponse) && (
-                          <p className="dropzone-subtitle">
-                            Drag & drop a PDF file here, or click to browse
-                          </p>
-                        )}
                     </div>
                   </div>
                 )}

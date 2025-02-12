@@ -44,7 +44,7 @@ function App() {
             </button>
           </div>
         </div>
-        <DocsPlayground type={selectedTab} playgroundMode={false} />
+        <DocsPlayground type={selectedTab} />
       </main>
     </div>
   );

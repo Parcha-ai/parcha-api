@@ -144,10 +144,9 @@ describe("DocsPlayground Component", () => {
     // Error banner should not be present
     expect(screen.queryByTestId("env-error-banner")).not.toBeInTheDocument();
 
-    // Upload message should be visible
-    expect(
-      screen.getByText("Drag & drop a PDF file here, or click to browse")
-    ).toBeInTheDocument();
+    // Upload message should be visible - using partial text match since text is split across elements
+    expect(screen.getByText(/drag & drop or/i)).toBeInTheDocument();
+    expect(screen.getByText(/choose documents/i)).toBeInTheDocument();
   });
 
   it("shows validation options based on document type", async () => {
@@ -224,10 +223,9 @@ describe("DocsPlayground Component", () => {
       />
     );
 
-    // For EIN type, we should see the upload message directly
-    expect(
-      screen.getByText("Drag & drop a PDF file here, or click to browse")
-    ).toBeInTheDocument();
+    // For EIN type, we should see the upload message - using partial text match since text is split across elements
+    expect(screen.getByText(/drag & drop or/i)).toBeInTheDocument();
+    expect(screen.getByText(/choose documents/i)).toBeInTheDocument();
   });
 
   it("handles file upload and displays file name", async () => {
@@ -297,7 +295,7 @@ describe("DocsPlayground Component", () => {
     const user = userEvent.setup();
 
     // Open the accordion
-    const accordionToggle = screen.getByText("Validation Options");
+    const accordionToggle = screen.getByText("View Validation Options");
     await user.click(accordionToggle);
 
     // Wait for accordion to open
@@ -471,7 +469,11 @@ describe("DocsPlayground Component", () => {
     expect(screen.getByText(/Parcha Labs, Inc./)).toBeInTheDocument();
 
     // Check if address details are displayed
-    expect(screen.getByText("755 Sansome St.")).toBeInTheDocument();
+    expect(
+      screen.getByText((_, element) => {
+        return element?.textContent === "755 Sansome St.";
+      })
+    ).toBeInTheDocument();
     expect(screen.getByText("Suite 350")).toBeInTheDocument();
     expect(screen.getByText(/San Francisco, CA, 94111/)).toBeInTheDocument();
 
@@ -643,5 +645,38 @@ describe("DocsPlayground Component", () => {
     // Debug panel should not be visible by default
     const debugPanel = container.querySelector("div[style*='position: fixed']");
     expect(debugPanel).not.toBeInTheDocument();
+  });
+
+  it("calls onResponse callback when API returns a response", async () => {
+    const mockOnResponse = vi.fn();
+    const mockApiResponse = {
+      ...mockInitialResponse,
+      command_instance_id: "test-id-123",
+    };
+    mockCheckDocument.mockResolvedValueOnce(mockApiResponse);
+
+    const { container } = render(
+      <DocsPlayground
+        type="incorporation"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+        onResponse={mockOnResponse}
+      />
+    );
+
+    // Upload a file
+    const file = new File(["dummy content"], "test.pdf", {
+      type: "application/pdf",
+    });
+    const fileInput = container.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+    await user.upload(fileInput, file);
+
+    // Wait for the API call to complete and verify callback was called
+    await waitFor(() => {
+      expect(mockOnResponse).toHaveBeenCalledTimes(1);
+      expect(mockOnResponse).toHaveBeenCalledWith(mockApiResponse);
+    });
   });
 });
