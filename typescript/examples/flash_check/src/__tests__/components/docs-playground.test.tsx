@@ -5,7 +5,6 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import React from "react";
 import { FlashLoaderResponse } from "../../types/flash";
 import * as checkDocumentModule from "../../services/flashLoader";
-import { SUPPORTED_FILE_TYPES } from "../../utils/file";
 
 // Mock the PDF viewer components
 vi.mock("@react-pdf-viewer/core", () => ({
