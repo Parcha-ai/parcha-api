@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { DocsPlayground } from "../../components/docs-playground";
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import React from "react";
-import { FlashLoaderResponse, FlashLoaderType } from "../../types/flash";
+import { FlashLoaderResponse } from "../../types/flash";
 import * as checkDocumentModule from "../../services/flashLoader";
 
 // Mock the PDF viewer components
