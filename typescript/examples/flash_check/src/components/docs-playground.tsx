@@ -740,7 +740,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                 <h3 className="text-lg font-medium text-gray-900">
                   Upload Document
                 </h3>
-                {playgroundMode && (
+                {(playgroundMode || (!document && !initialResponse)) && (
                   <button
                     onClick={loadSampleDocument}
                     className="text-xs text-indigo-600 hover:text-indigo-900 font-medium"

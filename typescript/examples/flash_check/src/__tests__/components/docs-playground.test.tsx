@@ -983,7 +983,22 @@ describe("DocsPlayground Component", () => {
     });
   });
 
-  it("hides Load Sample Document button when playgroundMode is false", () => {
+  it("hides Load Sample Document button when playgroundMode is false and document is loaded", () => {
+    render(
+      <DocsPlayground
+        type="incorporation"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+        playgroundMode={false}
+        initialResponse={mockInitialResponse}
+      />
+    );
+
+    // Verify the Load Sample Document button is not present when document is loaded
+    expect(screen.queryByText("Load Sample Document")).not.toBeInTheDocument();
+  });
+
+  it("shows Load Sample Document button when playgroundMode is false and no document is loaded", () => {
     render(
       <DocsPlayground
         type="incorporation"
@@ -993,12 +1008,13 @@ describe("DocsPlayground Component", () => {
       />
     );
 
-    // Verify the Load Sample Document button is not present
-    expect(screen.queryByText("Load Sample Document")).not.toBeInTheDocument();
+    // Verify the Load Sample Document button is present when no document is loaded
+    expect(screen.getByText("Load Sample Document")).toBeInTheDocument();
   });
 
-  it("shows Load Sample Document button when playgroundMode is true", () => {
-    render(
+  it("shows Load Sample Document button when playgroundMode is true regardless of document state", () => {
+    // Test with no document
+    const { rerender } = render(
       <DocsPlayground
         type="incorporation"
         apiKey="test-api-key"
@@ -1007,7 +1023,21 @@ describe("DocsPlayground Component", () => {
       />
     );
 
-    // Verify the Load Sample Document button is present
+    // Verify button is present without document
+    expect(screen.getByText("Load Sample Document")).toBeInTheDocument();
+
+    // Test with document loaded
+    rerender(
+      <DocsPlayground
+        type="incorporation"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+        playgroundMode={true}
+        initialResponse={mockInitialResponse}
+      />
+    );
+
+    // Verify button is still present with document
     expect(screen.getByText("Load Sample Document")).toBeInTheDocument();
   });
 });

@@ -531,8 +531,6 @@
   position: relative;
 }
 
-
-
 .dropzone::before {
   top: -2px;
   left: -2px;
@@ -839,19 +837,17 @@
 }
 
 .error-message {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  right: 1rem;
   background-color: #fee2e2;
-  color: #ef4444;
-  padding: 1rem;
-  font-size: 0.95rem;
-  animation: slideDown 0.3s ease-out;
-  z-index: 10;
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  text-align: center;
   border: 1px solid #fecaca;
 }
 
