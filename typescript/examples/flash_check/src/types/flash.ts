@@ -183,9 +183,9 @@ export interface Document {
   type: string;
   url: string;
   file_name: string;
-  description: string | null;
+  description?: string | null;
   source_type: string;
-  num_pages: number | null;
+  num_pages?: number | null;
 }
 
 export interface ProofOfAddressFlashCheckResult {
@@ -227,44 +227,68 @@ export interface KYCProofOfAddressFlashCheckResult {
 }
 
 export interface FlashLoaderResponse {
-  agent_instance_id: string;
-  error: string | null;
-  recommendation: string | null;
-  check_start_time: string | null;
-  agent_key: string;
-  instructions: string | null;
-  follow_up: string | null;
-  check_end_time: string | null;
-  command_id: string;
-  explanation: string | null;
-  step_number: number | null;
-  check_args: CheckArguments;
-  created_at: string;
-  command_name: string;
-  payload:
-    | ProofOfAddressFlashCheckResult
-    | IncorporationFlashCheckResult
-    | EinFlashCheckResult
-    | KYCProofOfAddressFlashCheckResult;
-  status: string;
-  data_loader_args: Record<string, unknown>;
-  job_id: string;
-  command_desc: string | null;
-  answer: string;
-  data_loader_id: string;
   updated_at: string;
-  result_type: string;
-  passed: boolean;
-  data_loader_start_time: string | null;
-  command_instance_id: string;
-  input_data: {
-    type: string;
-    document: Document;
+  started_at: string;
+  batch_id: string | null;
+  created_at: string;
+  completed_at: string;
+  job_type: string;
+  celery_task_id: string | null;
+  retried_job_id: string | null;
+  job_args: Record<string, unknown> | null;
+  id: string;
+  progress: number | null;
+  agent_id: string;
+  recommendation: string | null;
+  owner_id: string;
+  queued_at: string | null;
+  descope_user_id: string | null;
+  tenant_id: string;
+  status: string;
+  input_payload: {
+    id: string;
+    self_attested_data: Record<string, unknown>;
   };
-  alerts: Record<string, unknown> | null;
-  verification_data: Record<string, unknown> | null;
-  evidence: Record<string, unknown> | null;
-  data_loader_end_time: string | null;
+  check_results: Array<{
+    command_instance_id: string;
+    verification_data: Record<string, unknown> | null;
+    evidence: Record<string, unknown> | null;
+    agent_instance_id: string;
+    error: string | null;
+    recommendation: string | null;
+    data_loader_end_time: string | null;
+    agent_key: string;
+    instructions: string | null;
+    follow_up: string | null;
+    check_start_time: string | null;
+    command_id: string;
+    explanation: string | null;
+    step_number: number | null;
+    check_end_time: string | null;
+    command_name: string;
+    payload:
+      | ProofOfAddressFlashCheckResult
+      | IncorporationFlashCheckResult
+      | EinFlashCheckResult
+      | KYCProofOfAddressFlashCheckResult;
+    status: string;
+    check_args: CheckArguments;
+    created_at: string;
+    command_desc: string | null;
+    answer: string;
+    data_loader_id: string;
+    data_loader_args: Record<string, unknown> | null;
+    job_id: string;
+    result_type: string;
+    passed: boolean;
+    data_loader_start_time: string | null;
+    updated_at: string;
+    input_data: {
+      type: string;
+      document: Document;
+    };
+    alerts: Record<string, unknown> | null;
+  }>;
 }
 
 export interface DocumentFile {

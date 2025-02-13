@@ -128,11 +128,18 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   useEffect(() => {
     if (initialResponse) {
       setResponse(initialResponse);
-      if (initialResponse.input_data?.document?.url) {
+      // Calculate time spent from job timestamps
+      if (initialResponse.started_at && initialResponse.completed_at) {
+        const startTime = new Date(initialResponse.started_at).getTime();
+        const endTime = new Date(initialResponse.completed_at).getTime();
+        setTimeSpent((endTime - startTime) / 1000);
+      }
+      if (initialResponse.check_results[0]?.input_data?.document?.url) {
         setDocument({
           file: new File(
             [],
-            initialResponse.input_data.document.file_name || "document.pdf",
+            initialResponse.check_results[0].input_data.document.file_name ||
+              "document.pdf",
             {
               type: "application/pdf",
             }
@@ -170,7 +177,9 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       <div>Type: {type}</div>
       <div>Has Initial Response: {initialResponse ? "Yes" : "No"}</div>
       <div>Has Response State: {response ? "Yes" : "No"}</div>
-      <div>Response ID: {response?.command_instance_id || "None"}</div>
+      <div>
+        Response ID: {response?.check_results[0].command_instance_id || "None"}
+      </div>
       <div>Recent Events:</div>
       {debugInfo.map((info, i) => (
         <div key={i}>{info}</div>
@@ -180,16 +189,26 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
   const checkDocumentWithApi = useCallback(
     async (doc: DocumentFile) => {
-      if (!isConfigured) return;
+      console.log("=== checkDocumentWithApi called ===");
+      console.log("Current type:", type);
+      console.log("Config:", config);
+      console.log("Document:", doc.file.name);
+      console.log("isConfigured:", isConfigured);
+      console.log("acceptedTypes:", Array.from(acceptedTypes));
+
+      if (!isConfigured) {
+        console.log("Not configured, returning early");
+        return;
+      }
 
       if (config.documentTypes && acceptedTypes.size === 0) {
+        console.log("No accepted types selected");
         setError("Please select at least one document type");
         return;
       }
 
       setLoading(true);
       setError(null);
-      const startTime = Date.now();
 
       try {
         const checkArgs = {
@@ -202,6 +221,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
             : {}),
           ...(type === "ein" && einNumber ? { ein_number: einNumber } : {}),
         };
+        console.log("Constructed checkArgs:", checkArgs);
 
         const kybSchema = {
           id: "parcha-latest",
@@ -224,6 +244,17 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
             ],
           },
         };
+        console.log("Constructed kybSchema:", kybSchema);
+
+        console.log("Calling checkDocument with:", {
+          apiKey: apiKey ? "***" : undefined,
+          baseUrl: effectiveBaseUrl,
+          agentKey: agentKey ? "***" : undefined,
+          checkId: config.checkId,
+          documentField: config.documentField,
+          descope_user_id,
+          type,
+        });
 
         const result = await checkDocument(
           {
@@ -241,15 +272,21 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           type
         );
 
-        const endTime = Date.now();
-        setTimeSpent((endTime - startTime) / 1000);
+        // Calculate time spent from job timestamps
+        if (result.started_at && result.completed_at) {
+          const startTime = new Date(result.started_at).getTime();
+          const endTime = new Date(result.completed_at).getTime();
+          setTimeSpent((endTime - startTime) / 1000);
+        }
+
         log.info("flash_loader_response", {
-          time_spent: (endTime - startTime) / 1000,
+          time_spent: timeSpent,
           full_response: result,
         });
         setResponse(result);
         onResponse?.(result);
       } catch (err) {
+        console.error("Error in checkDocumentWithApi:", err);
         setError((err as Error).message);
         setTimeSpent(null);
       } finally {
@@ -309,7 +346,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   });
 
   const getPdfUrl = (response: FlashLoaderResponse) => {
-    const url = response.input_data.document.url;
+    const url = response.check_results[0].input_data.document.url;
     if (!url) return null;
 
     if (url.startsWith("https://demo.parcha.ai/getDocument")) {
@@ -317,7 +354,10 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
     }
 
     const proxyUrl = new URL("https://demo.parcha.ai/getDocument");
-    proxyUrl.searchParams.set("case_id", response.command_instance_id);
+    proxyUrl.searchParams.set(
+      "case_id",
+      response.check_results[0].command_instance_id
+    );
     proxyUrl.searchParams.set("expired_url", url);
 
     return proxyUrl.toString();
@@ -326,7 +366,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   const pdfUrl = response ? getPdfUrl(response) : null;
 
   const getCurlCommand = () => {
-    if (!document) return "";
+    if (!document || !response) return "";
 
     const checkArgs = {
       ...config.checkArgs,
@@ -350,19 +390,25 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       `  "check_args": ${JSON.stringify(checkArgs, null, 4)
         .split("\n")
         .join("\n  ")},`,
-      `  "kyb_schema": {`,
+      `  "${
+        type === "individual_proof_of_address" ? "kyc_schema" : "kyb_schema"
+      }": {`,
       `    "id": "parcha-latest",`,
       `    "self_attested_data": {`,
-      `      "business_name": "Parcha",`,
-      `      "registered_business_name": "Parcha Labs Inc",`,
-      ...(type === "incorporation" && selectedJurisdiction.state
-        ? [
-            `      "address_of_operation": {`,
-            `        "state": "${selectedJurisdiction.state}",`,
-            `        "country_code": "US"`,
-            `      },`,
-          ]
-        : []),
+      ...(type === "individual_proof_of_address"
+        ? [`      "first_name": "Miguel",`, `      "last_name": "Rios",`]
+        : [
+            `      "business_name": "Parcha",`,
+            `      "registered_business_name": "Parcha Labs Inc",`,
+            ...(type === "incorporation" && selectedJurisdiction.state
+              ? [
+                  `      "address_of_operation": {`,
+                  `        "state": "${selectedJurisdiction.state}",`,
+                  `        "country_code": "US"`,
+                  `      },`,
+                ]
+              : []),
+          ]),
       `      "${config.documentField}": [`,
       `        {`,
       `          "b64_document": "<B64_DOC>",`,
@@ -410,7 +456,12 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
         type,
         url: SAMPLE_DOCUMENTS[type],
       });
+      console.log("=== loadSampleDocument called ===");
+      console.log("Current type:", type);
+      console.log("Sample document URL:", SAMPLE_DOCUMENTS[type]);
+
       const response = await fetch(SAMPLE_DOCUMENTS[type]);
+      console.log("Fetch response received:", response.status);
 
       if (!response.ok) {
         throw new Error(
@@ -423,24 +474,25 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
         contentType,
         status: response.status,
       });
+      console.log("Content type:", contentType);
 
       if (!contentType?.includes("application/pdf")) {
-        log.error(
-          "invalid_content_type",
-          new Error(`Expected PDF but got ${contentType}`)
-        );
+        const error = new Error(`Expected PDF but got ${contentType}`);
+        log.error("invalid_content_type", error);
         setError("Error: Sample document not found or invalid format");
         return;
       }
 
       const arrayBuffer = await response.arrayBuffer();
       log.info("sample_document_size", { size: arrayBuffer.byteLength });
+      console.log("Array buffer size:", arrayBuffer.byteLength);
 
       const file = new File(
         [arrayBuffer],
         SAMPLE_DOCUMENTS[type].split("/").pop() || "sample.pdf",
         { type: "application/pdf" }
       );
+      console.log("File created:", file.name);
 
       if (!isValidPDF(file)) {
         setError("Invalid PDF file");
@@ -449,12 +501,19 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
       const base64 = await fileToBase64(file);
       log.info("sample_document_base64", { length: base64.length });
+      console.log("Base64 created, length:", base64.length);
 
       const newDoc = { file, base64 };
+      console.log("Setting document and calling checkDocumentWithApi");
       setDocument(newDoc);
       setError(null);
+
+      // Ensure state is updated before calling checkDocumentWithApi
+      await new Promise((resolve) => setTimeout(resolve, 0));
       await checkDocumentWithApi(newDoc);
+      console.log("checkDocumentWithApi completed");
     } catch (err) {
+      console.error("Error in loadSampleDocument:", err);
       log.error("sample_document_error", err as Error);
       setError(
         "Error loading sample document. Please try uploading a file manually."
@@ -464,9 +523,11 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
   return (
     <div
-      key={`${type}-${initialResponse?.command_instance_id || "new"}`}
+      key={`${type}-${
+        initialResponse?.check_results[0].command_instance_id || "new"
+      }`}
       className="docs-playground"
-      data-response-id={response?.command_instance_id}
+      data-response-id={response?.check_results[0].command_instance_id}
       data-has-response={!!response}
       data-type={type}
       data-playground-mode={playgroundMode}
@@ -489,7 +550,8 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
       <div
         className={`main-content ${loading ? "loading" : ""} ${
-          document || initialResponse?.input_data?.document?.url
+          document ||
+          initialResponse?.check_results[0].input_data?.document?.url
             ? "has-document"
             : ""
         }`}
@@ -664,7 +726,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                       : ""
                   }`}
                 >
-                  <input {...getInputProps()} />
+                  <input {...getInputProps()} data-testid="file-input" />
                   {document ? (
                     <div className="file-info">
                       <p>📄 {document.file.name}</p>
@@ -745,46 +807,55 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           {response && (
             <div className="results-container" data-testid="results-container">
               <div
-                className={`result ${response.passed ? "success" : "failure"}`}
+                className={`result ${
+                  response.check_results[0].passed ? "success" : "failure"
+                }`}
               >
                 <div className="result-status">
                   <p>
                     <strong>Status:</strong>
                     <span
                       className={
-                        response.passed ? "success-text" : "failure-text"
+                        response.check_results[0].passed
+                          ? "success-text"
+                          : "failure-text"
                       }
                     >
-                      {response.passed ? "Passed ✅" : "Failed ❌"}
+                      {response.check_results[0].passed
+                        ? "Passed ✅"
+                        : "Failed ❌"}
                     </span>
                   </p>
-                  <p>
-                    <strong>Processing Time:</strong>
-                    {timeSpent
-                      ? `${timeSpent.toFixed(2)} seconds`
-                      : "Not available"}
-                  </p>
+                  {timeSpent !== null && (
+                    <p>
+                      <strong>Processing Time:</strong>
+                      {timeSpent.toFixed(2)} seconds
+                    </p>
+                  )}
                 </div>
 
                 <div className="analysis-section">
                   <p>
                     <strong>Analysis</strong>
                   </p>
-                  <p>{response.answer}</p>
+                  <p>{response.check_results[0].answer}</p>
                 </div>
 
-                {response.alerts && Object.keys(response.alerts).length > 0 && (
-                  <div className="alerts">
-                    <p>
-                      <strong>⚠️ Validation Warnings</strong>
-                    </p>
-                    <ul>
-                      {Object.entries(response.alerts).map(([key, message]) => (
-                        <li key={key}>{message as string}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {response.check_results[0].alerts &&
+                  Object.keys(response.check_results[0].alerts).length > 0 && (
+                    <div className="alerts">
+                      <p>
+                        <strong>⚠️ Validation Warnings</strong>
+                      </p>
+                      <ul>
+                        {Object.entries(response.check_results[0].alerts).map(
+                          ([key, message]) => (
+                            <li key={key}>{message as string}</li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
 
                 <div
                   className="document-details"
@@ -796,36 +867,46 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                       <>
                         <p>
                           <strong>Company Name: </strong>
-                          {(response.payload as IncorporationFlashCheckResult)
-                            .company_name || "Not available"}
+                          {(
+                            response.check_results[0]
+                              .payload as IncorporationFlashCheckResult
+                          ).company_name || "Not available"}
                         </p>
                         <p>
                           <strong>Jurisdiction: </strong>
-                          {(response.payload as IncorporationFlashCheckResult)
-                            .jurisdiction?.state || "Not available"}
+                          {(
+                            response.check_results[0]
+                              .payload as IncorporationFlashCheckResult
+                          ).jurisdiction?.state || "Not available"}
                         </p>
                         <p>
                           <strong>Document Date: </strong>
-                          {formatDate(response.payload.document_date) ||
-                            "Not available"}
+                          {formatDate(
+                            response.check_results[0].payload.document_date
+                          ) || "Not available"}
                         </p>
                       </>
                     ) : type === "ein" ? (
                       <>
                         <p>
                           <strong>Company Name: </strong>
-                          {(response.payload as EinFlashCheckResult)
-                            .company_name || "Not available"}
+                          {(
+                            response.check_results[0]
+                              .payload as EinFlashCheckResult
+                          ).company_name || "Not available"}
                         </p>
                         <p>
                           <strong>Document Date: </strong>
-                          {formatDate(response.payload.document_date) ||
-                            "Not available"}
+                          {formatDate(
+                            response.check_results[0].payload.document_date
+                          ) || "Not available"}
                         </p>
                         <p data-testid="ein-number">
                           <strong>EIN Number: </strong>
-                          {(response.payload as EinFlashCheckResult).ein ||
-                            "Not available"}
+                          {(
+                            response.check_results[0]
+                              .payload as EinFlashCheckResult
+                          ).ein || "Not available"}
                         </p>
                       </>
                     ) : type === "individual_proof_of_address" ? (
@@ -833,68 +914,83 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                         <p>
                           <strong>Individual Name: </strong>
                           {(
-                            response.payload as KYCProofOfAddressFlashCheckResult
+                            response.check_results[0]
+                              .payload as KYCProofOfAddressFlashCheckResult
                           ).individual_name || "Not available"}
                         </p>
                         <p>
                           <strong>Document Type: </strong>
                           {(
-                            response.payload as KYCProofOfAddressFlashCheckResult
+                            response.check_results[0]
+                              .payload as KYCProofOfAddressFlashCheckResult
                           ).document_type || "Not available"}
                         </p>
                         <p>
                           <strong>Document Date: </strong>
-                          {formatDate(response.payload.document_date) ||
-                            "Not available"}
+                          {formatDate(
+                            response.check_results[0].payload.document_date
+                          ) || "Not available"}
                         </p>
 
-                        {(response.payload as KYCProofOfAddressFlashCheckResult)
-                          .document_address && (
+                        {(
+                          response.check_results[0]
+                            .payload as KYCProofOfAddressFlashCheckResult
+                        ).document_address && (
                           <div className="address-details">
                             <p>
                               <strong>Address</strong>
                             </p>
                             {(
-                              response.payload as KYCProofOfAddressFlashCheckResult
+                              response.check_results[0]
+                                .payload as KYCProofOfAddressFlashCheckResult
                             ).document_address.street_1 && (
                               <p>
                                 {
                                   (
-                                    response.payload as KYCProofOfAddressFlashCheckResult
+                                    response.check_results[0]
+                                      .payload as KYCProofOfAddressFlashCheckResult
                                   ).document_address.street_1
                                 }
                               </p>
                             )}
                             {(
-                              response.payload as KYCProofOfAddressFlashCheckResult
+                              response.check_results[0]
+                                .payload as KYCProofOfAddressFlashCheckResult
                             ).document_address.street_2 && (
                               <p>
                                 {
                                   (
-                                    response.payload as KYCProofOfAddressFlashCheckResult
+                                    response.check_results[0]
+                                      .payload as KYCProofOfAddressFlashCheckResult
                                   ).document_address.street_2
                                 }
                               </p>
                             )}
                             {((
-                              response.payload as KYCProofOfAddressFlashCheckResult
+                              response.check_results[0]
+                                .payload as KYCProofOfAddressFlashCheckResult
                             ).document_address.city ||
                               (
-                                response.payload as KYCProofOfAddressFlashCheckResult
+                                response.check_results[0]
+                                  .payload as KYCProofOfAddressFlashCheckResult
                               ).document_address.state ||
                               (
-                                response.payload as KYCProofOfAddressFlashCheckResult
+                                response.check_results[0]
+                                  .payload as KYCProofOfAddressFlashCheckResult
                               ).document_address.postal_code) && (
                               <p>
                                 {[
                                   (
-                                    response.payload as KYCProofOfAddressFlashCheckResult
+                                    response.check_results[0]
+                                      .payload as KYCProofOfAddressFlashCheckResult
                                   ).document_address.city,
                                   (
-                                    response.payload as KYCProofOfAddressFlashCheckResult
+                                    response.check_results[0]
+                                      .payload as KYCProofOfAddressFlashCheckResult
                                   ).document_address.state,
                                   (
-                                    response.payload as KYCProofOfAddressFlashCheckResult
+                                    response.check_results[0]
+                                      .payload as KYCProofOfAddressFlashCheckResult
                                   ).document_address.postal_code,
                                 ]
                                   .filter(Boolean)
@@ -902,12 +998,14 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                               </p>
                             )}
                             {(
-                              response.payload as KYCProofOfAddressFlashCheckResult
+                              response.check_results[0]
+                                .payload as KYCProofOfAddressFlashCheckResult
                             ).document_address.country_code && (
                               <p>
                                 {
                                   (
-                                    response.payload as KYCProofOfAddressFlashCheckResult
+                                    response.check_results[0]
+                                      .payload as KYCProofOfAddressFlashCheckResult
                                   ).document_address.country_code
                                 }
                               </p>
@@ -919,72 +1017,87 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                       <>
                         <p>
                           <strong>Company: </strong>
-                          {(response.payload as ProofOfAddressFlashCheckResult)
-                            .company_name || "Not available"}
+                          {(
+                            response.check_results[0]
+                              .payload as ProofOfAddressFlashCheckResult
+                          ).company_name || "Not available"}
                         </p>
-                        {response.payload.type ===
+                        {response.check_results[0].payload.type ===
                           "ProofOfAddressFlashCheckResult" && (
                           <>
                             <p>
                               <strong>Document Type: </strong>
                               {(
-                                response.payload as ProofOfAddressFlashCheckResult
+                                response.check_results[0]
+                                  .payload as ProofOfAddressFlashCheckResult
                               ).document_type || "Not available"}
                             </p>
                             <p>
                               <strong>Document Date: </strong>
-                              {formatDate(response.payload.document_date) ||
-                                "Not available"}
+                              {formatDate(
+                                response.check_results[0].payload.document_date
+                              ) || "Not available"}
                             </p>
 
                             {(
-                              response.payload as ProofOfAddressFlashCheckResult
+                              response.check_results[0]
+                                .payload as ProofOfAddressFlashCheckResult
                             ).document_address && (
                               <div className="address-details">
                                 <p>
                                   <strong>Address</strong>
                                 </p>
                                 {(
-                                  response.payload as ProofOfAddressFlashCheckResult
+                                  response.check_results[0]
+                                    .payload as ProofOfAddressFlashCheckResult
                                 ).document_address.street_1 && (
                                   <p>
                                     {
                                       (
-                                        response.payload as ProofOfAddressFlashCheckResult
+                                        response.check_results[0]
+                                          .payload as ProofOfAddressFlashCheckResult
                                       ).document_address.street_1
                                     }
                                   </p>
                                 )}
                                 {(
-                                  response.payload as ProofOfAddressFlashCheckResult
+                                  response.check_results[0]
+                                    .payload as ProofOfAddressFlashCheckResult
                                 ).document_address.street_2 && (
                                   <p>
                                     {
                                       (
-                                        response.payload as ProofOfAddressFlashCheckResult
+                                        response.check_results[0]
+                                          .payload as ProofOfAddressFlashCheckResult
                                       ).document_address.street_2
                                     }
                                   </p>
                                 )}
                                 {((
-                                  response.payload as ProofOfAddressFlashCheckResult
+                                  response.check_results[0]
+                                    .payload as ProofOfAddressFlashCheckResult
                                 ).document_address.city ||
                                   (
-                                    response.payload as ProofOfAddressFlashCheckResult
+                                    response.check_results[0]
+                                      .payload as ProofOfAddressFlashCheckResult
                                   ).document_address.state ||
                                   (
-                                    response.payload as ProofOfAddressFlashCheckResult
+                                    response.check_results[0]
+                                      .payload as ProofOfAddressFlashCheckResult
                                   ).document_address.postal_code) && (
                                   <p>
                                     {[
                                       (
-                                        response.payload as ProofOfAddressFlashCheckResult
+                                        response.check_results[0]
+                                          .payload as ProofOfAddressFlashCheckResult
                                       ).document_address.city,
                                       (
-                                        response.payload as ProofOfAddressFlashCheckResult
+                                        response.check_results[0]
+                                          .payload as ProofOfAddressFlashCheckResult
                                       ).document_address.state,
                                       (
-                                        response.payload as ProofOfAddressFlashCheckResult
+                                        response.check_results[0]
+                                          .payload as ProofOfAddressFlashCheckResult
                                       ).document_address.postal_code,
                                     ]
                                       .filter(Boolean)
@@ -992,12 +1105,14 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                                   </p>
                                 )}
                                 {(
-                                  response.payload as ProofOfAddressFlashCheckResult
+                                  response.check_results[0]
+                                    .payload as ProofOfAddressFlashCheckResult
                                 ).document_address.country_code && (
                                   <p>
                                     {
                                       (
-                                        response.payload as ProofOfAddressFlashCheckResult
+                                        response.check_results[0]
+                                          .payload as ProofOfAddressFlashCheckResult
                                       ).document_address.country_code
                                     }
                                   </p>
