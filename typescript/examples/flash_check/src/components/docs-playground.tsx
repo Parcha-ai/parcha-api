@@ -135,15 +135,27 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
         setTimeSpent((endTime - startTime) / 1000);
       }
       if (initialResponse.check_results[0]?.input_data?.document?.url) {
+        const fileName =
+          initialResponse.check_results[0].input_data.document.file_name ||
+          "document.pdf";
+        const fileExtension = fileName.split(".").pop()?.toLowerCase();
+
+        // Determine file type based on extension
+        let fileType = "application/pdf"; // default
+        if (fileExtension) {
+          if (["png"].includes(fileExtension)) {
+            fileType = "image/png";
+          } else if (["jpg", "jpeg"].includes(fileExtension)) {
+            fileType = "image/jpeg";
+          } else if (["tif", "tiff"].includes(fileExtension)) {
+            fileType = "image/tiff";
+          } else if (["webp"].includes(fileExtension)) {
+            fileType = "image/webp";
+          }
+        }
+
         setDocument({
-          file: new File(
-            [],
-            initialResponse.check_results[0].input_data.document.file_name ||
-              "document.pdf",
-            {
-              type: "application/pdf",
-            }
-          ),
+          file: new File([], fileName, { type: fileType }),
           base64: "",
         });
       }
