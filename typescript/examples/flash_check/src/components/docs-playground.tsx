@@ -24,7 +24,7 @@ import {
   EinFlashCheckResult,
   KYCProofOfAddressFlashCheckResult,
 } from "../types/flash";
-import { fileToBase64, isValidPDF } from "../utils/file";
+import { fileToBase64, isValidFile, SUPPORTED_FILE_TYPES } from "../utils/file";
 import { checkDocument } from "../services/flashLoader";
 import { log } from "../utils/logger";
 import "./docs-playground.css";
@@ -314,8 +314,8 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       const file = acceptedFiles[0];
       if (!file) return;
 
-      if (!isValidPDF(file)) {
-        setError("Please upload a PDF file");
+      if (!isValidFile(file)) {
+        setError("Please upload a valid file");
         return;
       }
 
@@ -335,9 +335,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      "application/pdf": [".pdf"],
-    },
+    accept: SUPPORTED_FILE_TYPES,
     maxFiles: 1,
     disabled:
       !isConfigured ||
@@ -345,7 +343,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       (!playgroundMode && !!(document || initialResponse)),
   });
 
-  const getPdfUrl = (response: FlashLoaderResponse) => {
+  const getFileUrl = (response: FlashLoaderResponse) => {
     const url = response.check_results[0].input_data.document.url;
     if (!url) return null;
 
@@ -363,7 +361,48 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
     return proxyUrl.toString();
   };
 
-  const pdfUrl = response ? getPdfUrl(response) : null;
+  const fileUrl = response ? getFileUrl(response) : null;
+
+  const renderFilePreview = () => {
+    if (!document || !fileUrl) return null;
+
+    const fileType = document.file.type;
+
+    if (fileType === "application/pdf") {
+      return (
+        <Worker workerUrl={WORKER_URL}>
+          <Viewer fileUrl={fileUrl} plugins={[defaultLayoutPluginInstance]} />
+        </Worker>
+      );
+    } else if (fileType.startsWith("image/")) {
+      return (
+        <div
+          className="image-preview-container"
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <img
+            src={fileUrl}
+            alt="Document preview"
+            style={{
+              maxWidth: "100%",
+              maxHeight: "100%",
+              objectFit: "contain",
+              borderRadius: "4px",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            }}
+          />
+        </div>
+      );
+    }
+
+    return <div>Unsupported file type</div>;
+  };
 
   const getCurlCommand = () => {
     if (!document || !response) return "";
@@ -494,7 +533,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       );
       console.log("File created:", file.name);
 
-      if (!isValidPDF(file)) {
+      if (!isValidFile(file)) {
         setError("Invalid PDF file");
         return;
       }
@@ -701,16 +740,18 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                 <h3 className="text-lg font-medium text-gray-900">
                   Upload Document
                 </h3>
-                <button
-                  onClick={loadSampleDocument}
-                  className="text-xs text-indigo-600 hover:text-indigo-900 font-medium"
-                  disabled={
-                    loading ||
-                    (!playgroundMode && !!(document || initialResponse))
-                  }
-                >
-                  Load Sample Document
-                </button>
+                {playgroundMode && (
+                  <button
+                    onClick={loadSampleDocument}
+                    className="text-xs text-indigo-600 hover:text-indigo-900 font-medium"
+                    disabled={
+                      loading ||
+                      (!playgroundMode && !!(document || initialResponse))
+                    }
+                  >
+                    Load Sample Document
+                  </button>
+                )}
               </div>
 
               <div className="flex gap-4">
@@ -1130,7 +1171,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           )}
         </div>
 
-        <div className="preview-section">
+        <div className="preview-section" data-testid="preview-section">
           {error && (
             <div className="error-message" data-testid="error-message">
               {error}
@@ -1144,18 +1185,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
             </div>
           )}
 
-          <div className="pdf-container">
-            {document && pdfUrl ? (
-              <Worker workerUrl={WORKER_URL}>
-                <Viewer
-                  fileUrl={pdfUrl}
-                  plugins={[defaultLayoutPluginInstance]}
-                />
-              </Worker>
-            ) : document ? (
-              <div className="pdf-loading">Loading PDF...</div>
-            ) : null}
-          </div>
+          <div className="pdf-container">{renderFilePreview()}</div>
         </div>
       </div>
 

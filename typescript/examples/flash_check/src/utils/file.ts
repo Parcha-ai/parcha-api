@@ -24,13 +24,27 @@ export const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-export const isValidPDF = (file: File): boolean => {
+export const SUPPORTED_FILE_TYPES = {
+  "application/pdf": [".pdf"],
+  "image/png": [".png"],
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/tiff": [".tif", ".tiff"],
+  "image/webp": [".webp"],
+};
+
+export const isValidFile = (file: File): boolean => {
   console.log("Validating file:", {
     name: file.name,
     type: file.type,
     size: file.size,
   });
-  const result = file.type === "application/pdf";
+  const result = Object.keys(SUPPORTED_FILE_TYPES).includes(file.type);
   console.log("File validation result:", result);
   return result;
+};
+
+// Keep for backward compatibility but mark as deprecated
+/** @deprecated Use isValidFile instead */
+export const isValidPDF = (file: File): boolean => {
+  return isValidFile(file) && file.type === "application/pdf";
 };

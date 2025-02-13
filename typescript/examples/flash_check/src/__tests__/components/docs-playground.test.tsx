@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import React from "react";
 import { FlashLoaderResponse } from "../../types/flash";
 import * as checkDocumentModule from "../../services/flashLoader";
+import { SUPPORTED_FILE_TYPES } from "../../utils/file";
 
 // Mock the PDF viewer components
 vi.mock("@react-pdf-viewer/core", () => ({
@@ -19,7 +20,24 @@ vi.mock("@react-pdf-viewer/default-layout", () => ({
 // Mock file utilities
 vi.mock("../../utils/file", () => ({
   fileToBase64: vi.fn().mockResolvedValue("base64string"),
+  isValidFile: vi.fn().mockImplementation((file: File) => {
+    const supportedTypes: Record<string, boolean> = {
+      "application/pdf": true,
+      "image/png": true,
+      "image/jpeg": true,
+      "image/tiff": true,
+      "image/webp": true,
+    };
+    return supportedTypes[file.type] || false;
+  }),
   isValidPDF: vi.fn().mockReturnValue(true),
+  SUPPORTED_FILE_TYPES: {
+    "application/pdf": [".pdf"],
+    "image/png": [".png"],
+    "image/jpeg": [".jpg", ".jpeg"],
+    "image/tiff": [".tif", ".tiff"],
+    "image/webp": [".webp"],
+  },
 }));
 
 // Mock flash loader service
@@ -575,7 +593,7 @@ describe("DocsPlayground Component", () => {
     );
   });
 
-  it("displays error message for non-PDF files", async () => {
+  it("displays error message for unsupported files", async () => {
     const { container } = render(
       <DocsPlayground
         type="incorporation"
@@ -584,27 +602,96 @@ describe("DocsPlayground Component", () => {
       />
     );
 
-    const file = new File(["dummy content"], "test.jpg", {
-      type: "image/jpeg",
+    const file = new File(["dummy content"], "test.txt", {
+      type: "text/plain",
     });
 
-    // Get the onDrop function from the dropzone props
-    const dropzone = container.querySelector(".dropzone") as HTMLElement;
-    const onDrop = (dropzone as any).__reactProps$?.onDrop;
+    const fileInput = container.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
 
-    if (onDrop) {
-      // Call onDrop directly with our file
-      await onDrop({
-        preventDefault: () => {},
-        target: dropzone,
-        dataTransfer: { files: [file] },
-      });
+    if (fileInput) {
+      await user.upload(fileInput, file);
+      const errorElement = await screen.findByTestId("error-message");
+      expect(errorElement).toHaveTextContent("Please upload a valid file");
+    }
+  });
 
-      await waitFor(async () => {
-        const errorElement = await screen.findByTestId("error-message");
-        expect(errorElement).toHaveTextContent("Please upload a PDF file");
+  it("handles image file uploads correctly", async () => {
+    const { container } = render(
+      <DocsPlayground
+        type="incorporation"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+      />
+    );
+
+    const file = new File(["dummy content"], "test.png", {
+      type: "image/png",
+    });
+
+    const fileInput = container.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+
+    if (fileInput) {
+      await user.upload(fileInput, file);
+
+      await waitFor(() => {
+        const fileInfo = screen.getByText((content) =>
+          content.includes("test.png")
+        );
+        expect(fileInfo).toBeInTheDocument();
       });
     }
+  });
+
+  it("renders image preview for image files", async () => {
+    const mockResponseWithImage = {
+      ...mockInitialResponse,
+      check_results: [
+        {
+          ...mockInitialResponse.check_results[0],
+          input_data: {
+            type: "ProofOfAddressClassificationToolInput",
+            document: {
+              type: "Document",
+              url: "https://storage.googleapis.com/test-bucket/test.png",
+              file_name: "test_image.png",
+              description: "",
+              source_type: "file_url",
+              num_pages: null,
+            },
+          },
+        },
+      ],
+    };
+
+    const { container } = render(
+      <DocsPlayground
+        type="business_proof_of_address"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+        initialResponse={mockResponseWithImage}
+      />
+    );
+
+    // Create a file with image type
+    const file = new File(["dummy content"], "test_image.png", {
+      type: "image/png",
+    });
+
+    // Upload the file
+    const fileInput = container.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+    await user.upload(fileInput, file);
+
+    // Wait for the preview container to be rendered
+    await waitFor(() => {
+      const previewContainer = screen.getByTestId("preview-section");
+      expect(previewContainer).toBeInTheDocument();
+    });
   });
 
   it("handles document type selection and enforces minimum selection", async () => {
@@ -895,5 +982,33 @@ describe("DocsPlayground Component", () => {
       expect(mockOnResponse).toHaveBeenCalledTimes(1);
       expect(mockOnResponse).toHaveBeenCalledWith(mockInitialResponse);
     });
+  });
+
+  it("hides Load Sample Document button when playgroundMode is false", () => {
+    render(
+      <DocsPlayground
+        type="incorporation"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+        playgroundMode={false}
+      />
+    );
+
+    // Verify the Load Sample Document button is not present
+    expect(screen.queryByText("Load Sample Document")).not.toBeInTheDocument();
+  });
+
+  it("shows Load Sample Document button when playgroundMode is true", () => {
+    render(
+      <DocsPlayground
+        type="incorporation"
+        apiKey="test-api-key"
+        agentKey="test-agent-key"
+        playgroundMode={true}
+      />
+    );
+
+    // Verify the Load Sample Document button is present
+    expect(screen.getByText("Load Sample Document")).toBeInTheDocument();
   });
 });
