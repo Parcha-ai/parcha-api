@@ -39,16 +39,16 @@ const isDevelopment = import.meta.env.DEV;
 const SAMPLE_DOCUMENTS: Record<FlashLoaderType, string> = {
   incorporation: isDevelopment
     ? "/parcha-inc.pdf"
-    : "@parcha/docs-playground/sample-docs/parcha-inc.pdf",
+    : "assets/@parcha/docs-playground/sample-docs/parcha-inc.pdf",
   business_proof_of_address: isDevelopment
     ? "/parcha-poa.pdf"
-    : "@parcha/docs-playground/sample-docs/parcha-poa.pdf",
+    : "assets/@parcha/docs-playground/sample-docs/parcha-poa.pdf",
   individual_proof_of_address: isDevelopment
     ? "/customer-poai.pdf"
-    : "@parcha/docs-playground/sample-docs/customer-poai.pdf",
+    : "assets/@parcha/docs-playground/sample-docs/customer-poai.pdf",
   ein: isDevelopment
     ? "/parcha_ein.pdf"
-    : "@parcha/docs-playground/sample-docs/parcha_ein.pdf",
+    : "assets/@parcha/docs-playground/sample-docs/parcha_ein.pdf",
 };
 
 const formatDate = (dateString: string | null) => {
