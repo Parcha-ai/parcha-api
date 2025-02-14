@@ -2,7 +2,7 @@
   "name": "@parcha/docs-playground",
   "private": false,
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   },
   "version": "0.1.39",
   "type": "module",
