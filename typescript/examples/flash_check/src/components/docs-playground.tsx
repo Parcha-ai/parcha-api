@@ -36,19 +36,6 @@ const WORKER_URL =
 // Check if we're in development mode
 const isDevelopment = import.meta.env.DEV;
 
-const SAMPLE_DOCUMENTS: Record<FlashLoaderType, string> = {
-  incorporation: isDevelopment
-    ? "/parcha-inc.pdf"
-    : "assets/sample-docs/parcha-inc.pdf",
-  business_proof_of_address: isDevelopment
-    ? "/parcha-poa.pdf"
-    : "assets/sample-docs/parcha-poa.pdf",
-  individual_proof_of_address: isDevelopment
-    ? "/customer-poai.pdf"
-    : "assets/sample-docs/customer-poai.pdf",
-  ein: isDevelopment ? "/parcha_ein.pdf" : "assets/sample-docs/parcha_ein.pdf",
-};
-
 const formatDate = (dateString: string | null) => {
   if (!dateString) return null;
   return new Date(dateString).toLocaleDateString("en-US", {
@@ -68,6 +55,7 @@ export interface DocsPlaygroundProps {
   playgroundMode?: boolean;
   showDebugPanel?: boolean;
   onResponse?: (response: FlashLoaderResponse) => void;
+  sampleDocumentUrls?: Partial<Record<FlashLoaderType, string>>;
 }
 
 export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
@@ -82,6 +70,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
   playgroundMode = true,
   showDebugPanel = false,
   onResponse,
+  sampleDocumentUrls,
 }) => {
   const config = useMemo(() => FLASH_LOADER_CONFIGS[type], [type]);
   const [document, setDocument] = useState<DocumentFile | null>(null);
@@ -503,13 +492,18 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
     try {
       log.info("loading_sample_document", {
         type,
-        url: SAMPLE_DOCUMENTS[type],
+        url: sampleDocumentUrls?.[type] || SAMPLE_DOCUMENTS[type],
       });
       console.log("=== loadSampleDocument called ===");
       console.log("Current type:", type);
-      console.log("Sample document URL:", SAMPLE_DOCUMENTS[type]);
+      console.log(
+        "Sample document URL:",
+        sampleDocumentUrls?.[type] || SAMPLE_DOCUMENTS[type]
+      );
 
-      const response = await fetch(SAMPLE_DOCUMENTS[type]);
+      const response = await fetch(
+        sampleDocumentUrls?.[type] || SAMPLE_DOCUMENTS[type]
+      );
       console.log("Fetch response received:", response.status);
 
       if (!response.ok) {
@@ -538,7 +532,9 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
       const file = new File(
         [arrayBuffer],
-        SAMPLE_DOCUMENTS[type].split("/").pop() || "sample.pdf",
+        sampleDocumentUrls?.[type]?.split("/").pop() ||
+          SAMPLE_DOCUMENTS[type].split("/").pop() ||
+          "sample.pdf",
         { type: "application/pdf" }
       );
       console.log("File created:", file.name);
@@ -568,7 +564,25 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
         "Error loading sample document. Please try uploading a file manually."
       );
     }
-  }, [type, checkDocumentWithApi]);
+  }, [type, checkDocumentWithApi, sampleDocumentUrls]);
+
+  // Update the SAMPLE_DOCUMENTS constant to use props if available
+  const SAMPLE_DOCUMENTS: Record<FlashLoaderType, string> = {
+    incorporation:
+      sampleDocumentUrls?.incorporation ||
+      (isDevelopment ? "/parcha-inc.pdf" : "assets/sample-docs/parcha-inc.pdf"),
+    business_proof_of_address:
+      sampleDocumentUrls?.business_proof_of_address ||
+      (isDevelopment ? "/parcha-poa.pdf" : "assets/sample-docs/parcha-poa.pdf"),
+    individual_proof_of_address:
+      sampleDocumentUrls?.individual_proof_of_address ||
+      (isDevelopment
+        ? "/customer-poai.pdf"
+        : "assets/sample-docs/customer-poai.pdf"),
+    ein:
+      sampleDocumentUrls?.ein ||
+      (isDevelopment ? "/parcha_ein.pdf" : "assets/sample-docs/parcha_ein.pdf"),
+  };
 
   return (
     <div
