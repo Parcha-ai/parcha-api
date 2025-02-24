@@ -1,12 +1,17 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
-import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import {
   Code as CodeIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   KeyboardArrowRight as KeyboardArrowRightIcon,
   DeleteOutline as DeleteOutlineIcon,
+  CheckCircleRounded as CheckCircleRoundedIcon,
+  CancelRounded as CancelRoundedIcon,
+  DeleteForeverRounded,
+  Code,
+  CheckCircle,
+  CancelOutlined,
 } from "@mui/icons-material";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
@@ -27,7 +32,6 @@ import {
 import { fileToBase64, isValidFile, SUPPORTED_FILE_TYPES } from "../utils/file";
 import { checkDocument } from "../services/flashLoader";
 import { log } from "../utils/logger";
-import "./docs-playground.css";
 
 const DEFAULT_API_URL = "https://demo.parcha.ai/api/v1";
 const WORKER_URL =
@@ -100,7 +104,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       ? import.meta.env.VITE_KYC_AGENT_KEY
       : import.meta.env.VITE_AGENT_KEY)
   );
-  const defaultLayoutPluginInstance = defaultLayoutPlugin();
+  // const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
   // Add debug info
   const addDebugInfo = useCallback((info: string) => {
@@ -159,19 +163,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
   // Add debug panel to the UI
   const renderDebugPanel = () => (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 0,
-        right: 0,
-        background: "#f0f0f0",
-        padding: "10px",
-        maxWidth: "400px",
-        zIndex: 9999,
-        fontSize: "12px",
-        fontFamily: "monospace",
-      }}
-    >
+    <div className="fixed bottom-0 right-0 bg-slate-100 p-2.5 max-w-sm z-50 text-xs font-mono">
       <div>Debug Info:</div>
       <div>Type: {type}</div>
       <div>Has Initial Response: {initialResponse ? "Yes" : "No"}</div>
@@ -188,20 +180,11 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
   const checkDocumentWithApi = useCallback(
     async (doc: DocumentFile) => {
-      console.log("=== checkDocumentWithApi called ===");
-      console.log("Current type:", type);
-      console.log("Config:", config);
-      console.log("Document:", doc.file.name);
-      console.log("isConfigured:", isConfigured);
-      console.log("acceptedTypes:", Array.from(acceptedTypes));
-
       if (!isConfigured) {
-        console.log("Not configured, returning early");
         return;
       }
 
       if (config.documentTypes && acceptedTypes.size === 0) {
-        console.log("No accepted types selected");
         setError("Please select at least one document type");
         return;
       }
@@ -220,7 +203,6 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
             : {}),
           ...(type === "ein" && einNumber ? { ein_number: einNumber } : {}),
         };
-        console.log("Constructed checkArgs:", checkArgs);
 
         const kybSchema = {
           id: "parcha-latest",
@@ -243,17 +225,6 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
             ],
           },
         };
-        console.log("Constructed kybSchema:", kybSchema);
-
-        console.log("Calling checkDocument with:", {
-          apiKey: apiKey ? "***" : undefined,
-          baseUrl: effectiveBaseUrl,
-          agentKey: agentKey ? "***" : undefined,
-          checkId: config.checkId,
-          documentField: config.documentField,
-          descope_user_id,
-          type,
-        });
 
         const result = await checkDocument(
           {
@@ -278,10 +249,6 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           setTimeSpent((endTime - startTime) / 1000);
         }
 
-        log.info("flash_loader_response", {
-          time_spent: timeSpent,
-          full_response: result,
-        });
         setResponse(result);
         onResponse?.(result);
       } catch (err) {
@@ -370,7 +337,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
     if (fileType === "application/pdf") {
       return (
         <Worker workerUrl={WORKER_URL}>
-          <Viewer fileUrl={fileUrl} plugins={[defaultLayoutPluginInstance]} />
+          <Viewer fileUrl={fileUrl} />
         </Worker>
       );
     } else if (fileType.startsWith("image/")) {
@@ -490,21 +457,9 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
   const loadSampleDocument = useCallback(async () => {
     try {
-      log.info("loading_sample_document", {
-        type,
-        url: sampleDocumentUrls?.[type] || SAMPLE_DOCUMENTS[type],
-      });
-      console.log("=== loadSampleDocument called ===");
-      console.log("Current type:", type);
-      console.log(
-        "Sample document URL:",
-        sampleDocumentUrls?.[type] || SAMPLE_DOCUMENTS[type]
-      );
-
       const response = await fetch(
         sampleDocumentUrls?.[type] || SAMPLE_DOCUMENTS[type]
       );
-      console.log("Fetch response received:", response.status);
 
       if (!response.ok) {
         throw new Error(
@@ -513,22 +468,15 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       }
 
       const contentType = response.headers.get("content-type");
-      log.info("sample_document_response", {
-        contentType,
-        status: response.status,
-      });
-      console.log("Content type:", contentType);
 
       if (!contentType?.includes("application/pdf")) {
         const error = new Error(`Expected PDF but got ${contentType}`);
-        log.error("invalid_content_type", error);
+        console.error("invalid_content_type", error);
         setError("Error: Sample document not found or invalid format");
         return;
       }
 
       const arrayBuffer = await response.arrayBuffer();
-      log.info("sample_document_size", { size: arrayBuffer.byteLength });
-      console.log("Array buffer size:", arrayBuffer.byteLength);
 
       const file = new File(
         [arrayBuffer],
@@ -537,7 +485,6 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           "sample.pdf",
         { type: "application/pdf" }
       );
-      console.log("File created:", file.name);
 
       if (!isValidFile(file)) {
         setError("Invalid PDF file");
@@ -545,18 +492,14 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       }
 
       const base64 = await fileToBase64(file);
-      log.info("sample_document_base64", { length: base64.length });
-      console.log("Base64 created, length:", base64.length);
 
       const newDoc = { file, base64 };
-      console.log("Setting document and calling checkDocumentWithApi");
       setDocument(newDoc);
       setError(null);
 
       // Ensure state is updated before calling checkDocumentWithApi
       await new Promise((resolve) => setTimeout(resolve, 0));
       await checkDocumentWithApi(newDoc);
-      console.log("checkDocumentWithApi completed");
     } catch (err) {
       console.error("Error in loadSampleDocument:", err);
       log.error("sample_document_error", err as Error);
@@ -589,7 +532,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       key={`${type}-${
         initialResponse?.check_results[0].command_instance_id || "new"
       }`}
-      className="docs-playground"
+      className="w-full h-screen bg-white"
       data-response-id={response?.check_results[0].command_instance_id}
       data-has-response={!!response}
       data-type={type}
@@ -597,9 +540,12 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
     >
       {showDebugPanel && renderDebugPanel()}
       {!isConfigured && (
-        <div className="env-error-banner" data-testid="env-error-banner">
+        <div
+          className="mx-8 bg-amber-100 border border-amber-200 text-amber-800 p-4 rounded-lg flex items-center gap-2"
+          data-testid="env-error-banner"
+        >
           <span>⚠️</span>
-          <p>
+          <p className="m-0">
             Missing required configuration: {!apiKey && "API key"}
             {!apiKey && !agentKey && " and "}
             {!agentKey &&
@@ -612,156 +558,21 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       )}
 
       <div
-        className={`main-content ${loading ? "loading" : ""} ${
+        className={`p-8 grid gap-8 h-full overflow-hidden relative transition-all duration-300 ease-in-out ${
+          loading ? "opacity-70 pointer-events-none" : ""
+        } ${
           document ||
           initialResponse?.check_results[0].input_data?.document?.url
-            ? "has-document"
-            : ""
+            ? "grid-cols-[minmax(400px,2fr)_3fr]"
+            : "grid-cols-[1fr_0fr]"
         }`}
         data-testid="main-content"
       >
-        <div className="upload-section">
-          <div className="controls-panel border-none">
-            {(config.documentTypes ||
-              config.showValidityPeriod ||
-              config.jurisdictions) && (
-              <div className="document-types-accordion rounded-xl">
-                <button
-                  className="accordion-toggle text-lg"
-                  onClick={() => setShowDocumentTypes(!showDocumentTypes)}
-                  disabled={loading}
-                >
-                  {showDocumentTypes ? (
-                    <>
-                      <KeyboardArrowDownIcon className="text-lg" />
-                      <span className="text-lg">Hide Validation Options</span>
-                    </>
-                  ) : (
-                    <>
-                      <KeyboardArrowRightIcon className="text-lg" />
-                      <span className="text-lg">View Validation Options</span>
-                    </>
-                  )}
-                </button>
-                {showDocumentTypes && (
-                  <div className="document-types">
-                    {config.jurisdictions && (
-                      <>
-                        <h3>Jurisdiction</h3>
-                        <div className="jurisdiction-select">
-                          <select
-                            value={`${selectedJurisdiction.state},${selectedJurisdiction.country}`}
-                            onChange={(e) => {
-                              const [state, country] =
-                                e.target.value.split(",");
-                              const jurisdiction = config.jurisdictions?.find(
-                                (j) =>
-                                  j.state === state && j.country === country
-                              );
-                              if (jurisdiction) {
-                                setSelectedJurisdiction(jurisdiction);
-                              }
-                            }}
-                            disabled={
-                              loading ||
-                              (!playgroundMode &&
-                                !!(document || initialResponse))
-                            }
-                          >
-                            {config.jurisdictions.map((jurisdiction) => (
-                              <option
-                                key={`${jurisdiction.state},${jurisdiction.country}`}
-                                value={`${jurisdiction.state},${jurisdiction.country}`}
-                              >
-                                {jurisdiction.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </>
-                    )}
-
-                    {type === "ein" && (
-                      <>
-                        <h3>EIN Number (Optional)</h3>
-                        <div className="ein-input">
-                          <input
-                            type="text"
-                            value={einNumber}
-                            onChange={(e) => setEinNumber(e.target.value)}
-                            placeholder="Enter EIN number to validate"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            disabled={loading}
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    {config.documentTypes && (
-                      <>
-                        <h3>Document Types</h3>
-                        <div className="document-types-grid">
-                          {config.documentTypes.map((type) => (
-                            <label
-                              key={type.value}
-                              className="document-type-checkbox"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={acceptedTypes.has(type.value)}
-                                onChange={() => {
-                                  toggleDocumentType(type.value);
-                                }}
-                                disabled={
-                                  loading ||
-                                  (acceptedTypes.size === 1 &&
-                                    acceptedTypes.has(type.value)) ||
-                                  (!playgroundMode &&
-                                    !!(document || initialResponse))
-                                }
-                                data-testid={`checkbox-${type.value}`}
-                              />
-                              <span>{type.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </>
-                    )}
-
-                    {config.showValidityPeriod && (
-                      <>
-                        <h3>Age Limit</h3>
-                        <div className="validity-options">
-                          {VALIDITY_PERIODS.map((period) => (
-                            <label
-                              key={period.days}
-                              className="validity-option"
-                            >
-                              <input
-                                type="radio"
-                                name="validity"
-                                checked={validityPeriod.days === period.days}
-                                onChange={() => setValidityPeriod(period)}
-                                disabled={
-                                  loading ||
-                                  (!playgroundMode &&
-                                    !!(document || initialResponse))
-                                }
-                              />
-                              <span>{period.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
+        <div className="flex flex-col gap-4 h-full overflow-y-auto min-w-0 mx-auto max-w-[600px] w-full transition-all duration-600 ease-in-out">
+          <div className="bg-white border-none p-5 flex flex-col gap-4 transition-all duration-300 ease-in-out origin-center hover:translate-y-[-2px]">
             <div className="flex flex-col gap-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-lg font-medium text-slate-900">
                   Upload Document
                 </h3>
                 {(playgroundMode || (!document && !initialResponse)) && (
@@ -777,28 +588,214 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                   </button>
                 )}
               </div>
+              {(config.documentTypes ||
+                config.showValidityPeriod ||
+                config.jurisdictions) && (
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <button
+                    className="flex items-center text-slate-700 w-full"
+                    onClick={() => setShowDocumentTypes(!showDocumentTypes)}
+                    disabled={loading}
+                  >
+                    {showDocumentTypes ? (
+                      <KeyboardArrowDownIcon className="mr-2" />
+                    ) : (
+                      <KeyboardArrowRightIcon className="mr-2" />
+                    )}
+                    <span>View Validation Options</span>
+                  </button>
+                  {showDocumentTypes && (
+                    <div className="pt-4 border-t border-slate-200 mt-4 bg-white">
+                      {config.jurisdictions && (
+                        <>
+                          <h3 className="text-sm uppercase tracking-wider text-slate-600 font-semibold mb-4">
+                            Jurisdiction
+                          </h3>
+                          <div className="mb-8">
+                            <select
+                              value={`${selectedJurisdiction.state},${selectedJurisdiction.country}`}
+                              onChange={(e) => {
+                                const [state, country] =
+                                  e.target.value.split(",");
+                                const jurisdiction = config.jurisdictions?.find(
+                                  (j) =>
+                                    j.state === state && j.country === country
+                                );
+                                if (jurisdiction) {
+                                  setSelectedJurisdiction(jurisdiction);
+                                }
+                              }}
+                              disabled={
+                                loading ||
+                                (!playgroundMode &&
+                                  !!(document || initialResponse))
+                              }
+                              className="w-full py-3 px-4 border border-slate-300 rounded-lg bg-white text-sm text-slate-700 cursor-pointer transition-all hover:border-indigo-500 hover:bg-slate-50 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                            >
+                              {config.jurisdictions.map((jurisdiction) => (
+                                <option
+                                  key={`${jurisdiction.state},${jurisdiction.country}`}
+                                  value={`${jurisdiction.state},${jurisdiction.country}`}
+                                >
+                                  {jurisdiction.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </>
+                      )}
+
+                      {type === "ein" && (
+                        <>
+                          <h3 className="text-sm uppercase tracking-wider text-slate-600 font-semibold mb-4">
+                            EIN Number (Optional)
+                          </h3>
+                          <div className="mb-8">
+                            <input
+                              type="text"
+                              value={einNumber}
+                              onChange={(e) => setEinNumber(e.target.value)}
+                              placeholder="Enter EIN number to validate"
+                              className="w-full px-3 py-2 border border-slate-300 rounded-md"
+                              disabled={loading}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {config.documentTypes && (
+                        <>
+                          <h3 className="text-sm uppercase tracking-wider text-slate-600 font-semibold mb-4">
+                            Document Types
+                          </h3>
+                          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 mb-8">
+                            {config.documentTypes.map((type) => (
+                              <label
+                                key={type.value}
+                                className="flex items-center py-3 px-4 bg-white border border-slate-200 rounded-lg cursor-pointer transition-all hover:border-indigo-500 hover:bg-slate-50 hover:-translate-y-0.5"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={acceptedTypes.has(type.value)}
+                                  onChange={() => {
+                                    toggleDocumentType(type.value);
+                                  }}
+                                  disabled={
+                                    loading ||
+                                    (acceptedTypes.size === 1 &&
+                                      acceptedTypes.has(type.value)) ||
+                                    (!playgroundMode &&
+                                      !!(document || initialResponse))
+                                  }
+                                  data-testid={`checkbox-${type.value}`}
+                                  className="appearance-none w-5 h-5 border-2 border-slate-300 rounded checked:bg-indigo-500 checked:border-indigo-500 relative cursor-pointer transition-all disabled:bg-slate-100 disabled:border-slate-200 disabled:cursor-not-allowed"
+                                />
+                                <span className="ml-3 text-sm text-slate-700 font-medium">
+                                  {type.label}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      {config.showValidityPeriod && (
+                        <>
+                          <h3 className="text-sm uppercase tracking-wider text-slate-600 font-semibold mb-4">
+                            Age Limit
+                          </h3>
+                          <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3">
+                            {VALIDITY_PERIODS.map((period) => (
+                              <label
+                                key={period.days}
+                                className="flex items-center py-3 px-4 bg-white border border-slate-200 rounded-lg cursor-pointer transition-all hover:border-indigo-500 hover:bg-slate-50 hover:-translate-y-0.5"
+                              >
+                                <input
+                                  type="radio"
+                                  name="validity"
+                                  checked={validityPeriod.days === period.days}
+                                  onChange={() => setValidityPeriod(period)}
+                                  disabled={
+                                    loading ||
+                                    (!playgroundMode &&
+                                      !!(document || initialResponse))
+                                  }
+                                  className="appearance-none w-5 h-5 border-2 border-slate-300 rounded-full checked:border-indigo-500 relative cursor-pointer transition-all disabled:bg-slate-100 disabled:border-slate-200 disabled:cursor-not-allowed"
+                                />
+                                <span className="ml-3 text-sm text-slate-700 font-medium">
+                                  {period.label}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-4">
                 <div
                   {...getRootProps()}
-                  className={`flex-1 dropzone border-none rounded-xl ${
-                    isDragActive ? "active" : ""
+                  className={`flex flex-col gap-4 flex-1 bg-slate-50 rounded-xl p-4 border-2 border-dashed border-slate-200 transition-all ${
+                    isDragActive ? "border-indigo-400 bg-indigo-50" : ""
                   } ${document ? "has-file" : ""} ${
                     !isConfigured ||
                     loading ||
                     (!playgroundMode && (document || initialResponse))
-                      ? "disabled"
-                      : ""
+                      ? "opacity-70 cursor-not-allowed"
+                      : "cursor-pointer"
                   }`}
                 >
                   <input {...getInputProps()} data-testid="file-input" />
                   {document ? (
-                    <div className="file-info">
-                      <p>📄 {document.file.name}</p>
+                    <div className="flex flex-col gap-4 w-full">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">📄</span>
+                          <span>{document.file.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            className="text-slate-400 hover:text-slate-600 p-2 rounded-md hover:bg-slate-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowCodeModal(true);
+                            }}
+                          >
+                            <Code />
+                          </button>
+                          <button
+                            className="text-slate-400 hover:text-slate-600 p-2 rounded-md hover:bg-red-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDocument(null);
+                              setResponse(null);
+                            }}
+                          >
+                            <span>
+                              <DeleteForeverRounded className="text-red-600" />
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDocument(null);
+                          setResponse(null);
+                        }}
+                        disabled={loading}
+                        className="text-slate-600 hover:text-slate-800"
+                      >
+                        Re-Run Document
+                      </button>
                     </div>
                   ) : (
-                    <div className="dropzone-content border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center">
-                      <div className="dropzone-text flex flex-col items-center gap-2">
+                    <div className="border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center p-6">
+                      <div className="flex flex-col items-center gap-2">
                         <div className="flex items-center gap-2">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -816,11 +813,9 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                             <line x1="12" y1="18" x2="12" y2="12" />
                             <line x1="9" y1="15" x2="15" y2="15" />
                           </svg>
-                          <p className="dropzone-title">
+                          <p className="m-0">
                             Drag & drop or{" "}
-                            <span
-                              style={{ color: "#6366f1", cursor: "pointer" }}
-                            >
+                            <span className="text-indigo-500 cursor-pointer">
                               choose documents
                             </span>{" "}
                             to upload
@@ -836,30 +831,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                       onClick={() => setShowCodeModal(true)}
                       disabled={loading}
                       title="View API Request"
-                      className="p-2 rounded-md hover:bg-gray-100 transition-colors"
-                    >
-                      <CodeIcon />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setDocument(null);
-                        setResponse(null);
-                      }}
-                      disabled={loading}
-                      title="Remove document"
-                      className="p-2 rounded-md hover:bg-red-100 text-red-600 transition-colors"
-                    >
-                      <DeleteOutlineIcon />
-                    </button>
-                  </div>
-                )}
-                {document && !playgroundMode && (
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => setShowCodeModal(true)}
-                      disabled={loading}
-                      title="View API Request"
-                      className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                      className="p-2 rounded-md hover:bg-slate-100 transition-colors"
                     >
                       <CodeIcon />
                     </button>
@@ -870,323 +842,390 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           </div>
 
           {response && (
-            <div className="results-container" data-testid="results-container">
-              <div
-                className={`result ${
-                  response.check_results[0].passed ? "success" : "failure"
-                }`}
-              >
-                <div className="result-status">
-                  <p>
-                    <strong>Status:</strong>
-                    <span
-                      className={
-                        response.check_results[0].passed
-                          ? "success-text"
-                          : "failure-text"
-                      }
-                    >
-                      {response.check_results[0].passed
-                        ? "Passed ✅"
-                        : "Failed ❌"}
-                    </span>
-                  </p>
-                  {timeSpent !== null && (
-                    <p>
-                      <strong>Processing Time:</strong>
-                      {timeSpent.toFixed(2)} seconds
-                    </p>
-                  )}
-                </div>
-
-                <div className="analysis-section">
-                  <p>
-                    <strong>Analysis</strong>
-                  </p>
-                  <p>{response.check_results[0].answer}</p>
+            <div
+              className="mt-2 flex flex-col gap-4 relative"
+              data-testid="results-container"
+            >
+              <div className="bg-white border border-slate-200 p-8 animate-[slideIn_0.3s_ease-out]">
+                <div
+                  className={`flex flex-col gap-2 p-5 rounded-md ${
+                    response.check_results[0].passed
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-200 text-red-700"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-base font-semibold">
+                      {response.check_results[0].passed ? (
+                        <CheckCircle
+                          sx={{ fontSize: "1.25rem" }}
+                          className="text-green-700"
+                        />
+                      ) : (
+                        <CancelOutlined
+                          sx={{ fontSize: "1.25rem" }}
+                          className="text-red-700"
+                        />
+                      )}
+                      <span className="font-semibold">
+                        {response.check_results[0].passed ? "Pass" : "Fail"}
+                      </span>
+                    </div>
+                    {timeSpent !== null && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-slate-700 font-semibold">
+                          Processing Time:
+                        </span>
+                        <span className="text-slate-900">
+                          {timeSpent.toFixed(2)} seconds
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {response.check_results[0].answer}
                 </div>
 
                 {response.check_results[0].alerts &&
                   Object.keys(response.check_results[0].alerts).length > 0 && (
-                    <div className="alerts">
-                      <p>
-                        <strong>⚠️ Validation Warnings</strong>
+                    <div className="bg-amber-50 border border-amber-100 p-6 my-6">
+                      <p className="font-bold text-amber-800 mb-2">
+                        ⚠️ Validation Warnings
                       </p>
-                      <ul>
+                      <ul className="mt-4 pl-6 list-none">
                         {Object.entries(response.check_results[0].alerts).map(
                           ([key, message]) => (
-                            <li key={key}>{message as string}</li>
+                            <li
+                              key={key}
+                              className="my-3 text-amber-800 relative before:content-['⚠️'] before:absolute before:left-[-1.5rem]"
+                            >
+                              {message as string}
+                            </li>
                           )
                         )}
                       </ul>
                     </div>
                   )}
 
-                <div
-                  className="document-details"
-                  data-testid="document-details"
-                >
-                  <h4>Document Information</h4>
-                  <div className="document-item">
+                <div className="mt-8 pt-8 " data-testid="document-details">
+                  <h4 className="text-xl font-semibold text-slate-900 mb-6">
+                    Document Information
+                  </h4>
+                  <div>
                     {type === "incorporation" ? (
-                      <>
-                        <p>
-                          <strong>Company Name: </strong>
-                          {(
-                            response.check_results[0]
-                              .payload as IncorporationFlashCheckResult
-                          ).company_name || "Not available"}
-                        </p>
-                        <p>
-                          <strong>Jurisdiction: </strong>
-                          {(
-                            response.check_results[0]
-                              .payload as IncorporationFlashCheckResult
-                          ).jurisdiction?.state || "Not available"}
-                        </p>
-                        <p>
-                          <strong>Document Date: </strong>
-                          {formatDate(
-                            response.check_results[0].payload.document_date
-                          ) || "Not available"}
-                        </p>
-                      </>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                          <span className="text-slate-900 font-semibold mr-3">
+                            Company Name:{" "}
+                          </span>
+                          <span>
+                            {(
+                              response.check_results[0]
+                                .payload as IncorporationFlashCheckResult
+                            ).company_name || "Not available"}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                          <span className="text-slate-900 font-semibold mr-3">
+                            Jurisdiction:{" "}
+                          </span>
+                          <span>
+                            {(
+                              response.check_results[0]
+                                .payload as IncorporationFlashCheckResult
+                            ).jurisdiction?.state || "Not available"}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                          <span className="text-slate-900 font-semibold mr-3">
+                            Document Date:{" "}
+                          </span>
+                          <span>
+                            {formatDate(
+                              response.check_results[0].payload.document_date
+                            ) || "Not available"}
+                          </span>
+                        </div>
+                      </div>
                     ) : type === "ein" ? (
-                      <>
-                        <p>
-                          <strong>Company Name: </strong>
-                          {(
-                            response.check_results[0]
-                              .payload as EinFlashCheckResult
-                          ).company_name || "Not available"}
-                        </p>
-                        <p>
-                          <strong>Document Date: </strong>
-                          {formatDate(
-                            response.check_results[0].payload.document_date
-                          ) || "Not available"}
-                        </p>
-                        <p data-testid="ein-number">
-                          <strong>EIN Number: </strong>
-                          {(
-                            response.check_results[0]
-                              .payload as EinFlashCheckResult
-                          ).ein || "Not available"}
-                        </p>
-                      </>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                          <span className="text-slate-900 font-semibold mr-3">
+                            Company Name:{" "}
+                          </span>
+                          <span>
+                            {(
+                              response.check_results[0]
+                                .payload as EinFlashCheckResult
+                            ).company_name || "Not available"}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                          <span className="text-slate-900 font-semibold mr-3">
+                            Document Date:{" "}
+                          </span>
+                          <span>
+                            {formatDate(
+                              response.check_results[0].payload.document_date
+                            ) || "Not available"}
+                          </span>
+                        </div>
+                        <div
+                          className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4"
+                          data-testid="ein-number"
+                        >
+                          <span className="text-slate-900 font-semibold mr-3">
+                            EIN Number:{" "}
+                          </span>
+                          <span>
+                            {(
+                              response.check_results[0]
+                                .payload as EinFlashCheckResult
+                            ).ein || "Not available"}
+                          </span>
+                        </div>
+                      </div>
                     ) : type === "individual_proof_of_address" ? (
-                      <>
-                        <p>
-                          <strong>Individual Name: </strong>
-                          {(
-                            response.check_results[0]
-                              .payload as KYCProofOfAddressFlashCheckResult
-                          ).individual_name || "Not available"}
-                        </p>
-                        <p>
-                          <strong>Document Type: </strong>
-                          {(
-                            response.check_results[0]
-                              .payload as KYCProofOfAddressFlashCheckResult
-                          ).document_type || "Not available"}
-                        </p>
-                        <p>
-                          <strong>Document Date: </strong>
-                          {formatDate(
-                            response.check_results[0].payload.document_date
-                          ) || "Not available"}
-                        </p>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                          <span className="text-slate-900 font-semibold mr-3">
+                            Individual Name:{" "}
+                          </span>
+                          <span>
+                            {(
+                              response.check_results[0]
+                                .payload as KYCProofOfAddressFlashCheckResult
+                            ).individual_name || "Not available"}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                          <span className="text-slate-900 font-semibold mr-3">
+                            Document Type:{" "}
+                          </span>
+                          <span>
+                            {(
+                              response.check_results[0]
+                                .payload as KYCProofOfAddressFlashCheckResult
+                            ).document_type || "Not available"}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                          <span className="text-slate-900 font-semibold mr-3">
+                            Document Date:{" "}
+                          </span>
+                          <span>
+                            {formatDate(
+                              response.check_results[0].payload.document_date
+                            ) || "Not available"}
+                          </span>
+                        </div>
 
                         {(
                           response.check_results[0]
                             .payload as KYCProofOfAddressFlashCheckResult
                         ).document_address && (
-                          <div className="address-details">
-                            <p>
-                              <strong>Address</strong>
+                          <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                            <p className="font-semibold text-slate-900">
+                              Address
                             </p>
-                            {(
-                              response.check_results[0]
-                                .payload as KYCProofOfAddressFlashCheckResult
-                            ).document_address.street_1 && (
-                              <p>
-                                {
-                                  (
-                                    response.check_results[0]
-                                      .payload as KYCProofOfAddressFlashCheckResult
-                                  ).document_address.street_1
-                                }
-                              </p>
-                            )}
-                            {(
-                              response.check_results[0]
-                                .payload as KYCProofOfAddressFlashCheckResult
-                            ).document_address.street_2 && (
-                              <p>
-                                {
-                                  (
-                                    response.check_results[0]
-                                      .payload as KYCProofOfAddressFlashCheckResult
-                                  ).document_address.street_2
-                                }
-                              </p>
-                            )}
-                            {((
-                              response.check_results[0]
-                                .payload as KYCProofOfAddressFlashCheckResult
-                            ).document_address.city ||
-                              (
+                            <div>
+                              {(
                                 response.check_results[0]
                                   .payload as KYCProofOfAddressFlashCheckResult
-                              ).document_address.state ||
-                              (
+                              ).document_address.street_1 && (
+                                <p className="my-1 text-slate-700">
+                                  {
+                                    (
+                                      response.check_results[0]
+                                        .payload as KYCProofOfAddressFlashCheckResult
+                                    ).document_address.street_1
+                                  }
+                                </p>
+                              )}
+                              {(
                                 response.check_results[0]
                                   .payload as KYCProofOfAddressFlashCheckResult
-                              ).document_address.postal_code) && (
-                              <p>
-                                {[
-                                  (
-                                    response.check_results[0]
-                                      .payload as KYCProofOfAddressFlashCheckResult
-                                  ).document_address.city,
-                                  (
-                                    response.check_results[0]
-                                      .payload as KYCProofOfAddressFlashCheckResult
-                                  ).document_address.state,
-                                  (
-                                    response.check_results[0]
-                                      .payload as KYCProofOfAddressFlashCheckResult
-                                  ).document_address.postal_code,
-                                ]
-                                  .filter(Boolean)
-                                  .join(", ")}
-                              </p>
-                            )}
-                            {(
-                              response.check_results[0]
-                                .payload as KYCProofOfAddressFlashCheckResult
-                            ).document_address.country_code && (
-                              <p>
-                                {
-                                  (
-                                    response.check_results[0]
-                                      .payload as KYCProofOfAddressFlashCheckResult
-                                  ).document_address.country_code
-                                }
-                              </p>
-                            )}
+                              ).document_address.street_2 && (
+                                <p className="my-1 text-slate-700">
+                                  {
+                                    (
+                                      response.check_results[0]
+                                        .payload as KYCProofOfAddressFlashCheckResult
+                                    ).document_address.street_2
+                                  }
+                                </p>
+                              )}
+                              {((
+                                response.check_results[0]
+                                  .payload as KYCProofOfAddressFlashCheckResult
+                              ).document_address.city ||
+                                (
+                                  response.check_results[0]
+                                    .payload as KYCProofOfAddressFlashCheckResult
+                                ).document_address.state ||
+                                (
+                                  response.check_results[0]
+                                    .payload as KYCProofOfAddressFlashCheckResult
+                                ).document_address.postal_code) && (
+                                <p className="my-1 text-slate-700">
+                                  {[
+                                    (
+                                      response.check_results[0]
+                                        .payload as KYCProofOfAddressFlashCheckResult
+                                    ).document_address.city,
+                                    (
+                                      response.check_results[0]
+                                        .payload as KYCProofOfAddressFlashCheckResult
+                                    ).document_address.state,
+                                    (
+                                      response.check_results[0]
+                                        .payload as KYCProofOfAddressFlashCheckResult
+                                    ).document_address.postal_code,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(", ")}
+                                </p>
+                              )}
+                              {(
+                                response.check_results[0]
+                                  .payload as KYCProofOfAddressFlashCheckResult
+                              ).document_address.country_code && (
+                                <p className="my-1 text-slate-700">
+                                  {
+                                    (
+                                      response.check_results[0]
+                                        .payload as KYCProofOfAddressFlashCheckResult
+                                    ).document_address.country_code
+                                  }
+                                </p>
+                              )}
+                            </div>
                           </div>
                         )}
-                      </>
+                      </div>
                     ) : (
-                      <>
-                        <p>
-                          <strong>Company: </strong>
-                          {(
-                            response.check_results[0]
-                              .payload as ProofOfAddressFlashCheckResult
-                          ).company_name || "Not available"}
-                        </p>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                          <span className="text-slate-900 font-semibold mr-3">
+                            Company:{" "}
+                          </span>
+                          <span>
+                            {(
+                              response.check_results[0]
+                                .payload as ProofOfAddressFlashCheckResult
+                            ).company_name || "Not available"}
+                          </span>
+                        </div>
                         {response.check_results[0].payload.type ===
                           "ProofOfAddressFlashCheckResult" && (
                           <>
-                            <p>
-                              <strong>Document Type: </strong>
-                              {(
-                                response.check_results[0]
-                                  .payload as ProofOfAddressFlashCheckResult
-                              ).document_type || "Not available"}
-                            </p>
-                            <p>
-                              <strong>Document Date: </strong>
-                              {formatDate(
-                                response.check_results[0].payload.document_date
-                              ) || "Not available"}
-                            </p>
+                            <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                              <span className="text-slate-900 font-semibold mr-3">
+                                Document Type:{" "}
+                              </span>
+                              <span>
+                                {(
+                                  response.check_results[0]
+                                    .payload as ProofOfAddressFlashCheckResult
+                                ).document_type || "Not available"}
+                              </span>
+                            </div>
+                            <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                              <span className="text-slate-900 font-semibold mr-3">
+                                Document Date:{" "}
+                              </span>
+                              <span>
+                                {formatDate(
+                                  response.check_results[0].payload
+                                    .document_date
+                                ) || "Not available"}
+                              </span>
+                            </div>
 
                             {(
                               response.check_results[0]
                                 .payload as ProofOfAddressFlashCheckResult
                             ).document_address && (
-                              <div className="address-details">
-                                <p>
-                                  <strong>Address</strong>
+                              <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
+                                <p className="font-semibold text-slate-900">
+                                  Address
                                 </p>
-                                {(
-                                  response.check_results[0]
-                                    .payload as ProofOfAddressFlashCheckResult
-                                ).document_address.street_1 && (
-                                  <p>
-                                    {
-                                      (
-                                        response.check_results[0]
-                                          .payload as ProofOfAddressFlashCheckResult
-                                      ).document_address.street_1
-                                    }
-                                  </p>
-                                )}
-                                {(
-                                  response.check_results[0]
-                                    .payload as ProofOfAddressFlashCheckResult
-                                ).document_address.street_2 && (
-                                  <p>
-                                    {
-                                      (
-                                        response.check_results[0]
-                                          .payload as ProofOfAddressFlashCheckResult
-                                      ).document_address.street_2
-                                    }
-                                  </p>
-                                )}
-                                {((
-                                  response.check_results[0]
-                                    .payload as ProofOfAddressFlashCheckResult
-                                ).document_address.city ||
-                                  (
+                                <div>
+                                  {(
                                     response.check_results[0]
                                       .payload as ProofOfAddressFlashCheckResult
-                                  ).document_address.state ||
-                                  (
+                                  ).document_address.street_1 && (
+                                    <p className="my-1 text-slate-700">
+                                      {
+                                        (
+                                          response.check_results[0]
+                                            .payload as ProofOfAddressFlashCheckResult
+                                        ).document_address.street_1
+                                      }
+                                    </p>
+                                  )}
+                                  {(
                                     response.check_results[0]
                                       .payload as ProofOfAddressFlashCheckResult
-                                  ).document_address.postal_code) && (
-                                  <p>
-                                    {[
-                                      (
-                                        response.check_results[0]
-                                          .payload as ProofOfAddressFlashCheckResult
-                                      ).document_address.city,
-                                      (
-                                        response.check_results[0]
-                                          .payload as ProofOfAddressFlashCheckResult
-                                      ).document_address.state,
-                                      (
-                                        response.check_results[0]
-                                          .payload as ProofOfAddressFlashCheckResult
-                                      ).document_address.postal_code,
-                                    ]
-                                      .filter(Boolean)
-                                      .join(", ")}
-                                  </p>
-                                )}
-                                {(
-                                  response.check_results[0]
-                                    .payload as ProofOfAddressFlashCheckResult
-                                ).document_address.country_code && (
-                                  <p>
-                                    {
-                                      (
-                                        response.check_results[0]
-                                          .payload as ProofOfAddressFlashCheckResult
-                                      ).document_address.country_code
-                                    }
-                                  </p>
-                                )}
+                                  ).document_address.street_2 && (
+                                    <p className="my-1 text-slate-700">
+                                      {
+                                        (
+                                          response.check_results[0]
+                                            .payload as ProofOfAddressFlashCheckResult
+                                        ).document_address.street_2
+                                      }
+                                    </p>
+                                  )}
+                                  {((
+                                    response.check_results[0]
+                                      .payload as ProofOfAddressFlashCheckResult
+                                  ).document_address.city ||
+                                    (
+                                      response.check_results[0]
+                                        .payload as ProofOfAddressFlashCheckResult
+                                    ).document_address.state ||
+                                    (
+                                      response.check_results[0]
+                                        .payload as ProofOfAddressFlashCheckResult
+                                    ).document_address.postal_code) && (
+                                    <p className="my-1 text-slate-700">
+                                      {[
+                                        (
+                                          response.check_results[0]
+                                            .payload as ProofOfAddressFlashCheckResult
+                                        ).document_address.city,
+                                        (
+                                          response.check_results[0]
+                                            .payload as ProofOfAddressFlashCheckResult
+                                        ).document_address.state,
+                                        (
+                                          response.check_results[0]
+                                            .payload as ProofOfAddressFlashCheckResult
+                                        ).document_address.postal_code,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(", ")}
+                                    </p>
+                                  )}
+                                  {(
+                                    response.check_results[0]
+                                      .payload as ProofOfAddressFlashCheckResult
+                                  ).document_address.country_code && (
+                                    <p className="my-1 text-slate-700">
+                                      {
+                                        (
+                                          response.check_results[0]
+                                            .payload as ProofOfAddressFlashCheckResult
+                                        ).document_address.country_code
+                                      }
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                             )}
                           </>
                         )}
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1195,37 +1234,70 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
           )}
         </div>
 
-        <div className="preview-section" data-testid="preview-section">
+        <div
+          className={`flex flex-col h-full overflow-hidden min-w-0 relative ${
+            document ||
+            initialResponse?.check_results[0].input_data?.document?.url
+              ? "opacity-100 translate-x-0 w-auto"
+              : "opacity-0 translate-x-[100px] w-0"
+          } transition-all duration-600 ease-in-out`}
+          data-testid="preview-section"
+        >
           {error && (
-            <div className="error-message" data-testid="error-message">
+            <div
+              className="bg-red-100 text-red-600 py-3 px-4 rounded-md mb-4 font-medium text-sm flex items-center justify-center text-center border border-red-200"
+              data-testid="error-message"
+            >
               {error}
             </div>
           )}
 
           {loading && (
-            <div className="loading-overlay" data-testid="loading-spinner">
-              <div className="loading-spinner"></div>
+            <div
+              className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center gap-4 z-10 backdrop-blur-sm"
+              data-testid="loading-spinner"
+            >
+              <div className="w-10 h-10 border-3 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
               <p>Processing document...</p>
             </div>
           )}
 
-          <div className="pdf-container">{renderFilePreview()}</div>
+          <div
+            className={`bg-white border border-slate-200 overflow-hidden flex-1 min-h-0 flex relative ${
+              document ||
+              initialResponse?.check_results[0].input_data?.document?.url
+                ? "opacity-100 translate-x-0"
+                : "opacity-0 translate-x-[40px]"
+            } transition-all duration-600 ease-in-out delay-200`}
+          >
+            {renderFilePreview()}
+          </div>
         </div>
       </div>
 
       {showCodeModal && (
-        <div className="modal-overlay" onClick={() => setShowCodeModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>API Request</h3>
+        <div
+          className="fixed inset-0 bg-black/75 flex justify-center items-center z-50 animate-[fadeIn_0.2s_ease-out] backdrop-blur-sm"
+          onClick={() => setShowCodeModal(false)}
+        >
+          <div
+            className="bg-white p-8 w-[90%] max-w-[800px] max-h-[90vh] overflow-y-auto border border-slate-200 animate-[slideUp_0.3s_ease-out]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="m-0 text-slate-900 text-xl font-semibold">
+                API Request
+              </h3>
               <button
-                className="modal-close"
+                className="bg-transparent border-none text-2xl text-slate-500 cursor-pointer p-2 leading-none transition-all hover:text-slate-900 hover:bg-slate-100"
                 onClick={() => setShowCodeModal(false)}
               >
                 ×
               </button>
             </div>
-            <pre className="code-block">{getCurlCommand()}</pre>
+            <pre className="bg-slate-900 text-slate-200 p-6 overflow-x-auto font-mono text-sm leading-relaxed m-0 whitespace-pre text-left tab-[2]">
+              {getCurlCommand()}
+            </pre>
           </div>
         </div>
       )}
