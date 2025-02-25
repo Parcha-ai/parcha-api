@@ -5,13 +5,11 @@ import {
   Code as CodeIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   KeyboardArrowRight as KeyboardArrowRightIcon,
-  DeleteOutline as DeleteOutlineIcon,
-  CheckCircleRounded as CheckCircleRoundedIcon,
-  CancelRounded as CancelRoundedIcon,
   DeleteForeverRounded,
   Code,
   CheckCircle,
   CancelOutlined,
+  ReplayRounded,
 } from "@mui/icons-material";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
@@ -569,7 +567,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
         data-testid="main-content"
       >
         <div className="flex flex-col gap-4 h-full overflow-y-auto min-w-0 mx-auto max-w-[600px] w-full transition-all duration-600 ease-in-out">
-          <div className="bg-white border-none p-5 flex flex-col gap-4 transition-all duration-300 ease-in-out origin-center hover:translate-y-[-2px]">
+          <div className="bg-white border-none p-5 flex flex-col gap-4 transition-all duration-300 ease-in-out origin-center">
             <div className="flex flex-col gap-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium text-slate-900">
@@ -605,13 +603,13 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                     <span>View Validation Options</span>
                   </button>
                   {showDocumentTypes && (
-                    <div className="pt-4 border-t border-slate-200 mt-4 bg-white">
+                    <div className="py-4 border-t border-slate-200 mt-4">
                       {config.jurisdictions && (
                         <>
                           <h3 className="text-sm uppercase tracking-wider text-slate-600 font-semibold mb-4">
                             Jurisdiction
                           </h3>
-                          <div className="mb-8">
+                          <div>
                             <select
                               value={`${selectedJurisdiction.state},${selectedJurisdiction.country}`}
                               onChange={(e) => {
@@ -630,7 +628,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                                 (!playgroundMode &&
                                   !!(document || initialResponse))
                               }
-                              className="w-full py-3 px-4 border border-slate-300 rounded-lg bg-white text-sm text-slate-700 cursor-pointer transition-all hover:border-indigo-500 hover:bg-slate-50 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                              className="w-full py-3 px-4 border border-slate-300 rounded-lg bg-white text-sm text-slate-700 cursor-pointer transition-all hover:border-indigo-500 hover:bg-slate-50 disabled:bg-slate-100"
                             >
                               {config.jurisdictions.map((jurisdiction) => (
                                 <option
@@ -688,7 +686,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                                       !!(document || initialResponse))
                                   }
                                   data-testid={`checkbox-${type.value}`}
-                                  className="appearance-none w-5 h-5 border-2 border-slate-300 rounded checked:bg-indigo-500 checked:border-indigo-500 relative cursor-pointer transition-all disabled:bg-slate-100 disabled:border-slate-200 disabled:cursor-not-allowed"
+                                  className="appearance-none w-5 h-5 border-2 border-slate-300 rounded checked:bg-indigo-500 checked:border-indigo-500 relative cursor-pointer transition-all disabled:bg-slate-100 disabled:border-slate-200  after:content-['✓'] after:absolute after:text-white after:font-bold after:text-xs after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:opacity-0 checked:after:opacity-100"
                                 />
                                 <span className="ml-3 text-sm text-slate-700 font-medium">
                                   {type.label}
@@ -720,7 +718,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                                     (!playgroundMode &&
                                       !!(document || initialResponse))
                                   }
-                                  className="appearance-none w-5 h-5 border-2 border-slate-300 rounded-full checked:border-indigo-500 relative cursor-pointer transition-all disabled:bg-slate-100 disabled:border-slate-200 disabled:cursor-not-allowed"
+                                  className="appearance-none w-5 h-5 border-2 border-slate-300 rounded-full checked:border-indigo-500 relative cursor-pointer transition-all disabled:bg-slate-100 disabled:border-slate-200 disabled:cursor-not-allowed after:content-[''] after:absolute after:w-3 after:h-3 after:bg-indigo-500 after:rounded-full after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:opacity-0 checked:after:opacity-100"
                                 />
                                 <span className="ml-3 text-sm text-slate-700 font-medium">
                                   {period.label}
@@ -738,33 +736,32 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
               <div className="flex gap-4">
                 <div
                   {...getRootProps()}
-                  className={`flex flex-col gap-4 flex-1 bg-slate-50 rounded-xl p-4 border-2 border-dashed border-slate-200 transition-all ${
+                  className={`flex flex-col gap-4 flex-1 bg-slate-50 transition-all p-4 ${
                     isDragActive ? "border-indigo-400 bg-indigo-50" : ""
                   } ${document ? "has-file" : ""} ${
                     !isConfigured ||
                     loading ||
                     (!playgroundMode && (document || initialResponse))
-                      ? "opacity-70 cursor-not-allowed"
+                      ? ""
                       : "cursor-pointer"
                   }`}
                 >
                   <input {...getInputProps()} data-testid="file-input" />
                   {document ? (
                     <div className="flex flex-col gap-4 w-full">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-400">📄</span>
-                          <span>{document.file.name}</span>
-                        </div>
+                      <div className="flex items-center justify-between w-full p-5 bg-white border border-slate-200 rounded-lg">
+                        <span className="text-slate-900 font-semibold">
+                          {document.file.name}
+                        </span>
                         <div className="flex items-center gap-2">
                           <button
-                            className="text-slate-400 hover:text-slate-600 p-2 rounded-md hover:bg-slate-100"
+                            className="p-2 rounded-md hover:bg-indigo-100"
                             onClick={(e) => {
                               e.stopPropagation();
                               setShowCodeModal(true);
                             }}
                           >
-                            <Code />
+                            <Code className="text-indigo-700" />
                           </button>
                           <button
                             className="text-slate-400 hover:text-slate-600 p-2 rounded-md hover:bg-red-100"
@@ -788,8 +785,14 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                           setResponse(null);
                         }}
                         disabled={loading}
-                        className="text-slate-600 hover:text-slate-800"
+                        className="place-self-center w-fit inline-flex items-center gap-2 text-slate-900 px-4 py-2 rounded-md bg-white border border-slate-200"
                       >
+                        <span>
+                          <ReplayRounded
+                            sx={{ fontSize: "1rem" }}
+                            className="text-slate-900"
+                          />
+                        </span>
                         Re-Run Document
                       </button>
                     </div>
@@ -831,7 +834,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                       onClick={() => setShowCodeModal(true)}
                       disabled={loading}
                       title="View API Request"
-                      className="p-2 rounded-md hover:bg-slate-100 transition-colors"
+                      className="p-2 rounded-md text-indigo-900 hover:bg-slate-100 transition-colors"
                     >
                       <CodeIcon />
                     </button>
@@ -843,15 +846,15 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
           {response && (
             <div
-              className="mt-2 flex flex-col gap-4 relative"
+              className="flex flex-col gap-4 relative"
               data-testid="results-container"
             >
-              <div className="bg-white border border-slate-200 p-8 animate-[slideIn_0.3s_ease-out]">
+              <div className="p-8 animate-[slideIn_0.3s_ease-out]">
                 <div
                   className={`flex flex-col gap-2 p-5 rounded-md ${
                     response.check_results[0].passed
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-200 text-red-700"
+                      ? "bg-green-100 text-green-700 border border-green-200"
+                      : "bg-red-100 text-red-700 border border-red-200"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -887,17 +890,14 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
 
                 {response.check_results[0].alerts &&
                   Object.keys(response.check_results[0].alerts).length > 0 && (
-                    <div className="bg-amber-50 border border-amber-100 p-6 my-6">
+                    <div className="bg-amber-50 border border-amber-100 p-6 my-6 rounded-lg">
                       <p className="font-bold text-amber-800 mb-2">
                         ⚠️ Validation Warnings
                       </p>
-                      <ul className="mt-4 pl-6 list-none">
+                      <ul className="mt-4 pl-2 list-none space-y-3">
                         {Object.entries(response.check_results[0].alerts).map(
                           ([key, message]) => (
-                            <li
-                              key={key}
-                              className="my-3 text-amber-800 relative before:content-['⚠️'] before:absolute before:left-[-1.5rem]"
-                            >
+                            <li key={key} className="text-amber-800 relative">
                               {message as string}
                             </li>
                           )
@@ -906,7 +906,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                     </div>
                   )}
 
-                <div className="mt-8 pt-8 " data-testid="document-details">
+                <div className="mt-8" data-testid="document-details">
                   <h4 className="text-xl font-semibold text-slate-900 mb-6">
                     Document Information
                   </h4>
@@ -915,7 +915,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                       <div className="flex flex-col gap-4">
                         <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
                           <span className="text-slate-900 font-semibold mr-3">
-                            Company Name:{" "}
+                            Company Name
                           </span>
                           <span>
                             {(
@@ -926,7 +926,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                         </div>
                         <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
                           <span className="text-slate-900 font-semibold mr-3">
-                            Jurisdiction:{" "}
+                            Jurisdiction
                           </span>
                           <span>
                             {(
@@ -937,7 +937,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                         </div>
                         <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
                           <span className="text-slate-900 font-semibold mr-3">
-                            Document Date:{" "}
+                            Document Date
                           </span>
                           <span>
                             {formatDate(
@@ -950,7 +950,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                       <div className="flex flex-col gap-4">
                         <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
                           <span className="text-slate-900 font-semibold mr-3">
-                            Company Name:{" "}
+                            Company Name
                           </span>
                           <span>
                             {(
@@ -961,7 +961,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                         </div>
                         <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
                           <span className="text-slate-900 font-semibold mr-3">
-                            Document Date:{" "}
+                            Document Date
                           </span>
                           <span>
                             {formatDate(
@@ -974,7 +974,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                           data-testid="ein-number"
                         >
                           <span className="text-slate-900 font-semibold mr-3">
-                            EIN Number:{" "}
+                            EIN Number
                           </span>
                           <span>
                             {(
@@ -988,7 +988,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                       <div className="flex flex-col gap-4">
                         <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
                           <span className="text-slate-900 font-semibold mr-3">
-                            Individual Name:{" "}
+                            Individual Name
                           </span>
                           <span>
                             {(
@@ -999,7 +999,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                         </div>
                         <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
                           <span className="text-slate-900 font-semibold mr-3">
-                            Document Type:{" "}
+                            Document Type
                           </span>
                           <span>
                             {(
@@ -1010,7 +1010,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                         </div>
                         <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
                           <span className="text-slate-900 font-semibold mr-3">
-                            Document Date:{" "}
+                            Document Date
                           </span>
                           <span>
                             {formatDate(
@@ -1106,7 +1106,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                       <div className="flex flex-col gap-4">
                         <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
                           <span className="text-slate-900 font-semibold mr-3">
-                            Company:{" "}
+                            Company
                           </span>
                           <span>
                             {(
@@ -1120,7 +1120,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                           <>
                             <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
                               <span className="text-slate-900 font-semibold mr-3">
-                                Document Type:{" "}
+                                Document Type
                               </span>
                               <span>
                                 {(
@@ -1131,7 +1131,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
                             </div>
                             <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4">
                               <span className="text-slate-900 font-semibold mr-3">
-                                Document Date:{" "}
+                                Document Date
                               </span>
                               <span>
                                 {formatDate(
