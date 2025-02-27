@@ -530,7 +530,7 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
       key={`${type}-${
         initialResponse?.check_results[0].command_instance_id || "new"
       }`}
-      className="w-full h-screen bg-white"
+      className="w-full h-full bg-white"
       data-response-id={response?.check_results[0].command_instance_id}
       data-has-response={!!response}
       data-type={type}
@@ -561,12 +561,12 @@ export const DocsPlayground: React.FC<DocsPlaygroundProps> = ({
         } ${
           document ||
           initialResponse?.check_results[0].input_data?.document?.url
-            ? "grid-cols-[minmax(400px,2fr)_3fr]"
-            : "grid-cols-[1fr_0fr]"
+            ? "grid-cols-2"
+            : "grid-cols-1"
         }`}
         data-testid="main-content"
       >
-        <div className="flex flex-col gap-4 h-full overflow-y-auto min-w-0 mx-auto max-w-[600px] w-full transition-all duration-600 ease-in-out">
+        <div className="flex flex-col gap-4 h-[calc(100%-2rem)] overflow-y-auto min-w-0 mx-auto max-w-[600px] w-full transition-all duration-600 ease-in-out">
           <div className="bg-white border-none p-5 flex flex-col gap-4 transition-all duration-300 ease-in-out origin-center">
             <div className="flex flex-col gap-4">
               <div className="flex justify-between items-center">

@@ -8,8 +8,8 @@ function App() {
   );
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-1 max-w-[90%] mx-auto px-4 py-6 w-full">
+    <div className="flex flex-col h-screen overflow-hidden">
+      <main className="flex-1 h-full max-w-[90%] mx-auto px-4 py-6 w-full">
         <div className="flex items-center mb-6">
           <div className="inline-flex rounded-md bg-gray-100 p-1">
             <button
