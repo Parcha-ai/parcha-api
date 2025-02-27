@@ -141,7 +141,7 @@
 }
 
 .pdf-placeholder::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -50%;
   left: -50%;
@@ -232,8 +232,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .results-container {
@@ -245,7 +249,7 @@
 }
 
 .results-container::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -0.5rem;
   left: 1.25rem;
@@ -398,7 +402,7 @@
 }
 
 .document-types-accordion {
-  background: #F9FAFB;
+  background: #f9fafb;
   border: none;
   border-radius: 0;
   overflow: hidden;
@@ -428,7 +432,7 @@
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  color: #6B7280;
+  color: #6b7280;
 }
 
 .accordion-toggle:hover:not(:disabled) {
@@ -492,7 +496,7 @@
 }
 
 .document-type-checkbox input[type="checkbox"]:checked::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 4px;
   top: 1px;
@@ -516,8 +520,8 @@
 }
 
 .dropzone {
-  background: #F9FAFB;
-  border: 2px dashed #E5E7EB;
+  background: #f9fafb;
+  border: 2px dashed #e5e7eb;
   border-radius: 0;
   padding: 24px;
   text-align: center;
@@ -534,29 +538,29 @@
 .dropzone::before {
   top: -2px;
   left: -2px;
-  border-top: 2px solid #E5E7EB;
-  border-left: 2px solid #E5E7EB;
+  border-top: 2px solid #e5e7eb;
+  border-left: 2px solid #e5e7eb;
 }
 
 .dropzone::after {
   top: -2px;
   right: -2px;
-  border-top: 2px solid #E5E7EB;
-  border-right: 2px solid #E5E7EB;
+  border-top: 2px solid #e5e7eb;
+  border-right: 2px solid #e5e7eb;
 }
 
 .dropzone .dropzone-content::before {
   bottom: -2px;
   left: -2px;
-  border-bottom: 2px solid #E5E7EB;
-  border-left: 2px solid #E5E7EB;
+  border-bottom: 2px solid #e5e7eb;
+  border-left: 2px solid #e5e7eb;
 }
 
 .dropzone .dropzone-content::after {
   bottom: -2px;
   right: -2px;
-  border-bottom: 2px solid #E5E7EB;
-  border-right: 2px solid #E5E7EB;
+  border-bottom: 2px solid #e5e7eb;
+  border-right: 2px solid #e5e7eb;
 }
 
 .dropzone-content {
@@ -577,7 +581,7 @@
 
 .dropzone-subtitle {
   font-size: 14px;
-  color: #6B7280;
+  color: #6b7280;
   margin: 0;
 }
 
@@ -664,8 +668,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {
@@ -780,7 +788,7 @@
 }
 
 .validity-option input[type="radio"]:checked::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 3px;
   top: 3px;
@@ -879,6 +887,6 @@
 
 .dropzone:hover:not(.disabled),
 .dropzone.active {
-  border-color: #E5E7EB;
-  background-color: #F9FAFB;
-} 
+  border-color: #e5e7eb;
+  background-color: #f9fafb;
+}
