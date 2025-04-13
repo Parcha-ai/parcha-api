@@ -30,6 +30,17 @@ class RunConfig(BaseModel):
     pass
 
 
+class EvalConfig(BaseModel):
+    """
+    Configuration for evaluating a job.
+    """
+
+    eval_name: Optional[str] = None
+    scorers: Optional[List[str]] = None
+    project_name: Optional[str] = None
+    expected_results: Optional[Dict] = None
+
+
 class KYBAgentJobInput(BaseModel):
     """
     Input data for starting a KYB agent job.
@@ -42,6 +53,8 @@ class KYBAgentJobInput(BaseModel):
     run_config: Optional[RunConfig] = None
     check_ids: Optional[List[str]] = None
     run_in_parallel: Optional[bool] = False
+    eval_config: Optional[EvalConfig] = None
+    batch_id: Optional[str] = None
 
 
 class KYCAgentJobInput(BaseModel):
@@ -56,6 +69,8 @@ class KYCAgentJobInput(BaseModel):
     run_config: Optional[RunConfig] = None
     check_ids: Optional[List[str]] = None
     run_in_parallel: Optional[bool] = True
+    eval_config: Optional[EvalConfig] = None
+    batch_id: Optional[str] = None
 
 
 class CheckJobInput(BaseModel):
